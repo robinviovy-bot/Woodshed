@@ -344,6 +344,22 @@ Tracks SPEC.md section 12. Update this after finishing each phase.
     session's lifecycle is meaningful, i.e. alongside Phase 6's real
     persistence, since right now a "session" is just component state that
     vanishes on navigation anyway).
+  - **Revised after Robin tried it (same session):** the original bottom
+    dock (Skip + Next buttons, always-expanded 6-option time signature
+    row, small "End session" text link) got simplified. `NoteNavigator`
+    puts prev/next arrows directly beside the note instead of the dock;
+    `useSingleNotePractice` reworked from a one-way queue to a
+    `history`/`historyIndex` model so previous() can step back through
+    notes already shown without re-drawing or double-counting them (next()
+    only draws a genuinely new note once you're back at the leading edge).
+    `queuePosition` is now derived from where you're actually looking
+    (`historyIndex - lapStartIndex + 1`), not a one-way "how many drawn"
+    counter, since those diverge as soon as you go back. Skip (push to
+    back of queue) is gone entirely, replaced by plain back/forward
+    history browsing. `TimeSignaturePicker` (new,
+    `engine/metronome/`) collapses to just the current value until tapped,
+    used in both `Practice.tsx` and `Metronome.tsx` for consistency. The
+    top-strip back-arrow button now does what "End session" used to.
 - [ ] Phase 5 — Remaining exercise modes (1, 3, 4) on the same engine
 - [ ] Phase 6 — Session persistence, drill_stats, streak and XP logic
 - [ ] Phase 7 — Home, exercise picker, progress heatmap

@@ -4,7 +4,8 @@ import { BeatIndicator } from "@/engine/metronome/BeatIndicator";
 import { BpmStepper } from "@/engine/metronome/BpmStepper";
 import { PlayPauseButton } from "@/engine/metronome/PlayPauseButton";
 import { TapTempoButton } from "@/engine/metronome/TapTempoButton";
-import { TIME_SIGNATURES, type MetronomeSound } from "@/engine/metronome/types";
+import { TimeSignaturePicker } from "@/engine/metronome/TimeSignaturePicker";
+import type { MetronomeSound } from "@/engine/metronome/types";
 import { useMetronome } from "@/engine/metronome/useMetronome";
 
 const SOUND_OPTIONS: MetronomeSound[] = ["click", "beep"];
@@ -28,17 +29,10 @@ export function Metronome() {
         <BeatIndicator beatsPerBar={metronome.beatsPerBar} currentBeat={metronome.currentBeat} />
         <PlayPauseButton isPlaying={metronome.isPlaying} onToggle={metronome.toggle} />
         <BpmStepper bpm={metronome.bpm} onChange={metronome.setBpm} />
-        <TapTempoButton onTap={metronome.tapTempo} />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <span className="text-sm text-ink-secondary">Time signature</span>
-        <SegmentedControl
-          value={metronome.timeSignature}
-          options={TIME_SIGNATURES}
-          onChange={metronome.setTimeSignature}
-          wrap
-        />
+        <div className="flex items-center gap-2">
+          <TapTempoButton onTap={metronome.tapTempo} />
+          <TimeSignaturePicker value={metronome.timeSignature} onChange={metronome.setTimeSignature} />
+        </div>
       </div>
 
       <div className="flex flex-col gap-2">

@@ -9,9 +9,10 @@ import { BeatIndicator } from "@/engine/metronome/BeatIndicator";
 import { BpmStepper } from "@/engine/metronome/BpmStepper";
 import { PlayPauseButton } from "@/engine/metronome/PlayPauseButton";
 import { TapTempoButton } from "@/engine/metronome/TapTempoButton";
-import { TIME_SIGNATURES, type MetronomeSound } from "@/engine/metronome/types";
+import { TimeSignaturePicker } from "@/engine/metronome/TimeSignaturePicker";
+import type { MetronomeSound } from "@/engine/metronome/types";
 import { useMetronome } from "@/engine/metronome/useMetronome";
-import { NoteDisplay } from "@/engine/practice/NoteDisplay";
+import { NoteNavigator } from "@/engine/practice/NoteNavigator";
 import { RepCounter } from "@/engine/practice/RepCounter";
 import { useSingleNotePractice } from "@/engine/practice/useSingleNotePractice";
 import { supabase } from "@/lib/supabase";
@@ -37,6 +38,32 @@ function formatDuration(totalSeconds: number): string {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+}
+
+// Ends the session (same as the old bottom "End session" link -- see
+// handleEndSession), just presented as a clear icon in the top strip
+// instead of small muted text, per Robin's feedback.
+function BackButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="End session"
+      className="flex h-11 w-11 items-center justify-center rounded-full"
+      style={{ color: "var(--color-ink-secondary)" }}
+    >
+      <svg viewBox="0 0 24 24" width="22" height="22">
+        <path
+          d="M15 4 7 12l8 8"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </button>
+  );
 }
 
 // Practice screen for mode: 'single' (exercises 1 and 2). No session
@@ -190,9 +217,9 @@ export function Practice() {
       style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom))" }}
     >
       <div className="flex flex-col gap-1">
-        <div className="flex items-center justify-between text-sm text-ink-secondary">
-          <span>{exercise.title}</span>
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between">
+          <BackButton onClick={handleEndSession} />
+          <div className="flex items-center gap-2 text-sm text-ink-secondary">
             <PoolBadge pool={pool} />
             {exercise.uses_metronome && (
               <span className="font-mono font-numeric">{metronome.bpm} BPM</span>
@@ -222,46 +249,29 @@ export function Practice() {
           </div>
         ) : (
           <>
-            <NoteDisplay pitchClass={practice.currentPitchClass} notation={profile?.notation ?? "en"} />
+            <NoteNavigator
+              pitchClass={practice.currentPitchClass}
+              notation={profile?.notation ?? "en"}
+              canGoBack={practice.canGoBack}
+              onPrevious={practice.previous}
+              onNext={practice.next}
+            />
             <RepCounter reps={practice.reps} onChange={practice.setReps} />
           </>
         )}
       </div>
 
-      <div className="flex flex-col items-center gap-4">
-        {exercise.uses_metronome && (
-          <>
-            <BeatIndicator beatsPerBar={metronome.beatsPerBar} currentBeat={metronome.currentBeat} />
-            <PlayPauseButton isPlaying={metronome.isPlaying} onToggle={metronome.toggle} />
-            <BpmStepper bpm={metronome.bpm} onChange={metronome.setBpm} />
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <TapTempoButton onTap={metronome.tapTempo} />
-              <SegmentedControl
-                value={metronome.timeSignature}
-                options={TIME_SIGNATURES}
-                onChange={metronome.setTimeSignature}
-                wrap
-              />
-            </div>
-          </>
-        )}
-
-        {!isRoundComplete && (
-          <>
-            <div className="flex w-full items-center gap-3">
-              <Button variant="secondary" onClick={practice.skip} className="flex-1">
-                Skip
-              </Button>
-              <Button onClick={practice.next} className="flex-[2]">
-                Next
-              </Button>
-            </div>
-            <button type="button" onClick={handleEndSession} className="text-sm text-ink-muted">
-              End session
-            </button>
-          </>
-        )}
-      </div>
+      {exercise.uses_metronome && (
+        <div className="flex flex-col items-center gap-4">
+          <BeatIndicator beatsPerBar={metronome.beatsPerBar} currentBeat={metronome.currentBeat} />
+          <PlayPauseButton isPlaying={metronome.isPlaying} onToggle={metronome.toggle} />
+          <BpmStepper bpm={metronome.bpm} onChange={metronome.setBpm} />
+          <div className="flex items-center justify-center gap-2">
+            <TapTempoButton onTap={metronome.tapTempo} />
+            <TimeSignaturePicker value={metronome.timeSignature} onChange={metronome.setTimeSignature} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

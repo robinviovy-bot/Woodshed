@@ -15,63 +15,90 @@ function drawRandomPitchClass(exclude?: number): number {
 
 // Mode handler for exercises 1 and 2 (mode: 'single', SPEC.md section 4).
 // naturals/accidentals are finite pools: shuffled once per "lap" and
-// consumed via next(), matching section 7's queue/"shuffle again" language.
-// chromatic draws independently at random each time instead (section 3:
-// "notes drawn at random from all 12"), so it never runs out or reaches a
-// "lap finished" state -- there's no queue to exhaust.
+// consumed as next() reaches new ground, matching section 7's queue/
+// "shuffle again" language. chromatic draws independently at random each
+// time instead (section 3: "notes drawn at random from all 12"), so it
+// never runs out or reaches a "lap finished" state.
+//
+// Every note ever shown this session lives in `history`; `historyIndex`
+// points at what's on screen. previous()/next() inside that history just
+// move the pointer (no new draw, no queue consumed). next() only draws a
+// genuinely new note once you're back at the leading edge of history --
+// that's what lets you go back to review an earlier note and come forward
+// again without losing your place or double-counting it.
 export function useSingleNotePractice(pool: Pool) {
   const isFiniteQueue = pool === "naturals" || pool === "accidentals";
   const poolSize = getPitchClassesForPool(pool).length;
 
-  const [queue, setQueue] = useState<number[]>(() =>
-    isFiniteQueue ? shuffle(getPitchClassesForPool(pool)) : [],
+  // One shuffle (or one random draw for chromatic), split into the first
+  // card shown and the rest of the lap's queue. Computed once on mount via
+  // useState's lazy initializer; the two states below just slice it, so
+  // they can never disagree with each other.
+  const [initialOrder] = useState<number[]>(() =>
+    isFiniteQueue ? shuffle(getPitchClassesForPool(pool)) : [drawRandomPitchClass()],
   );
-  const [currentPitchClass, setCurrentPitchClass] = useState<number>(() =>
-    isFiniteQueue ? queue[0] : drawRandomPitchClass(),
-  );
+  const [pendingQueue, setPendingQueue] = useState<number[]>(() => initialOrder.slice(1));
+  const [history, setHistory] = useState<number[]>(() => [initialOrder[0]]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+  const [lapStartIndex, setLapStartIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>("active");
   const [reps, setReps] = useState(0);
-  const [notesCovered, setNotesCovered] = useState(0);
+  const [notesCovered, setNotesCovered] = useState(1);
   const [totalReps, setTotalReps] = useState(0);
+
+  const currentPitchClass = history[historyIndex];
+  const canGoBack = historyIndex > 0;
+  // Position within the CURRENT lap of whatever's on screen right now, not
+  // how many notes have been drawn total -- those differ once previous()
+  // lets you look at an earlier note again.
+  const queuePosition = historyIndex - lapStartIndex + 1;
 
   function next() {
     setTotalReps((total) => total + reps);
     setReps(0);
-    setNotesCovered((count) => count + 1);
 
-    if (!isFiniteQueue) {
-      setCurrentPitchClass((prev) => drawRandomPitchClass(prev));
+    if (historyIndex < history.length - 1) {
+      // Stepping forward into a note already drawn earlier (the user had
+      // gone back). Just redisplay it, nothing new to draw or count.
+      setHistoryIndex(historyIndex + 1);
       return;
     }
 
-    const remaining = queue.slice(1);
-    setQueue(remaining);
-    if (remaining.length === 0) {
-      setPhase("roundComplete");
-    } else {
-      setCurrentPitchClass(remaining[0]);
+    if (!isFiniteQueue) {
+      const drawn = drawRandomPitchClass(currentPitchClass);
+      setHistory([...history, drawn]);
+      setHistoryIndex(historyIndex + 1);
+      setNotesCovered((count) => count + 1);
+      return;
     }
+
+    if (pendingQueue.length === 0) {
+      setPhase("roundComplete");
+      return;
+    }
+
+    const [drawn, ...rest] = pendingQueue;
+    setPendingQueue(rest);
+    setHistory([...history, drawn]);
+    setHistoryIndex(historyIndex + 1);
+    setNotesCovered((count) => count + 1);
   }
 
-  function skip() {
+  function previous() {
+    if (!canGoBack) return;
     setTotalReps((total) => total + reps);
     setReps(0);
-
-    if (!isFiniteQueue) {
-      setCurrentPitchClass((prev) => drawRandomPitchClass(prev));
-      return;
-    }
-
-    const [first, ...rest] = queue;
-    const reordered = [...rest, first];
-    setQueue(reordered);
-    setCurrentPitchClass(reordered[0]);
+    setHistoryIndex(historyIndex - 1);
   }
 
   function shuffleAgain() {
     const fresh = shuffle(getPitchClassesForPool(pool));
-    setQueue(fresh);
-    setCurrentPitchClass(fresh[0]);
+    const [drawn, ...rest] = fresh;
+    setPendingQueue(rest);
+    setHistory([...history, drawn]);
+    setHistoryIndex(history.length);
+    setLapStartIndex(history.length);
+    setNotesCovered((count) => count + 1);
     setPhase("active");
     setReps(0);
   }
@@ -79,14 +106,15 @@ export function useSingleNotePractice(pool: Pool) {
   return {
     phase,
     currentPitchClass,
+    canGoBack,
     queueLength: isFiniteQueue ? poolSize : null,
-    queuePosition: isFiniteQueue ? poolSize - queue.length + 1 : null,
+    queuePosition: isFiniteQueue ? queuePosition : null,
     reps,
     notesCovered,
     totalReps,
     setReps,
     next,
-    skip,
+    previous,
     shuffleAgain,
   };
 }

@@ -200,10 +200,11 @@ npm run lint     # oxlint — this template uses oxlint, not eslint
 npm run preview  # serve the production build locally
 ```
 
-Deploy: the Vercel account is connected to the GitHub repo, so pushing to
-`main` triggers a deploy automatically — there is no separate manual deploy
-command in normal use. `npx vercel` is only for one-off preview deploys
-outside that flow.
+Deploy: the Vercel project (created in Phase 10, see the build-order log)
+is connected to the GitHub repo, so pushing to `main` triggers a deploy
+automatically — there is no separate manual deploy command in normal use.
+`npx vercel` is only for one-off preview deploys outside that flow. Live
+at https://woodshed-liard.vercel.app.
 
 ## 6. Environment variables
 
@@ -665,6 +666,51 @@ Tracks SPEC.md section 12. Update this after finishing each phase.
     Home.tsx's `ProgramWithExercises` cast from Phase 3 already assumed
     correctly -- the inferred type just happens to be right there and
     wrong here, so don't trust it either way without checking.
-- [ ] Phase 8 — Milestone cards, tempo suggestion prompt
-- [ ] Phase 9 — PWA manifest, service worker, icons
-- [ ] Phase 10 — Deploy to Vercel
+- [ ] **Phase 8 — Milestone cards, tempo suggestion prompt.** Deferred, per
+  Robin: not the priority right now. Worth noting for whenever this comes
+  back up: both features partly depend on the confidence rating that was
+  removed from the practice flow (see the Phase 5 area's "Confidence
+  prompt removed" entry) -- the `streak_7/30/100/365` milestones don't
+  need it (`user_stats.current_streak` alone is enough), but
+  `complete_80_solid` and the tempo suggestion ("after two consecutive
+  Solid ratings, offer the next BPM rung") genuinely can't work without
+  confidence data existing again. Flagged to Robin; explicitly not solved
+  now.
+- [ ] **Phase 9 — PWA manifest, service worker, icons.** Deferred, per
+  Robin, in favor of shipping the plain website now (see Phase 10) and
+  iterating with real daily use before investing in installability. Robin
+  is using it today via Safari's "Add to Home Screen" instead, which works
+  as a shortcut but shows a generic screenshot-style icon and the Safari
+  chrome, not a real app icon or full-screen launch -- exactly what this
+  phase would fix. Wake Lock (deferred since Phase 4) also still lives
+  here.
+- [x] **Phase 10 — Deploy to Vercel.** The Vercel project did not already
+  exist despite what Phase 0's log said (that line was aspirational, not
+  actually done back then) -- created fresh this session: New Project →
+  Import the GitHub repo → Vercel auto-detected the Vite framework preset
+  correctly, no config file needed. Live at
+  https://woodshed-liard.vercel.app.
+  - **Two real gotchas hit during setup, worth remembering:** (1) Robin
+    had the right Supabase values saved under `NEXT_PUBLIC_SUPABASE_URL`/
+    `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` names (Next.js convention) --
+    this is a Vite project, so the Vercel environment variables must be
+    named exactly `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
+    (`lib/supabase.ts` reads those literal names via `import.meta.env`)
+    or the client throws at load. Supabase's newer "Publishable key"
+    (`sb_publishable_...`, under Project Settings -> API Keys) is the
+    direct successor to the legacy JWT "anon" key and is what
+    `VITE_SUPABASE_ANON_KEY` wants -- confirmed compatible with this
+    project's `@supabase/supabase-js@^2.116.0`. The "Secret key"/legacy
+    "service_role" key on that same page must never go in a Vercel env
+    var, per section 2 and section 6's environment variable rules. (2)
+    Supabase's Authentication -> URL Configuration still had the local-dev
+    default ("Site URL" pointing at `localhost`), so the first sign-up
+    confirmation email linked back to Robin's own machine instead of the
+    live site (`ERR_CONNECTION_REFUSED`). Fixed by setting Site URL to the
+    Vercel domain and adding `<domain>/**` to Redirect URLs -- but the
+    already-sent email's link was baked with the old URL and stayed
+    broken, so getting a working confirmation required deleting that
+    user row in Authentication -> Users and signing up again afterward.
+    Whenever the production domain changes (a custom domain, for
+    instance), this Supabase setting needs updating again or the same
+    failure mode will recur.

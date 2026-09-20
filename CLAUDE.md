@@ -294,12 +294,25 @@ Tracks SPEC.md section 12. Update this after finishing each phase.
   flag about what those options mean). `SegmentedControl` extracted from
   `Profile.tsx` into `components/` since the time signature picker needed
   the same pattern (now supports a `wrap` mode for more than a couple of
-  options). Verified via a temporary `/dev/metronome` route
-  (`MetronomeTest.tsx`, delete both once Phase 4 embeds the real thing):
-  play/pause, all 6 time signatures (beat indicator dot count updates
-  correctly), BPM stepper and tap tempo both apply live without
-  interrupting playback, sound switching same. Also deleted
-  `FreshnessDot.tsx` as dead code (see section 4 above).
+  options). Verified: play/pause, all 6 time signatures (beat indicator dot
+  count updates correctly), BPM stepper and tap tempo both apply live
+  without interrupting playback, sound switching same. Also deleted
+  `FreshnessDot.tsx` as dead code (see section 4 above). Also added a BPM
+  slider (`BpmStepper.tsx`) alongside the stepper buttons per Robin's
+  request, native `<input type="range">` with `accentColor` rather than a
+  custom-built slider.
+  - **Small pull-forward from Phase 7, per Robin:** a real (not throwaway)
+    `Home` page now exists at `/home`, the new default landing spot after
+    sign-in/onboarding (replacing `/profile`). It lists Fretboard 101's
+    exercises read from Supabase (real data, not hardcoded) and a
+    permanent "Open metronome" shortcut. The metronome itself moved from
+    the temporary `/dev/metronome` to a permanent `/metronome` route
+    (`MetronomeTest.tsx` renamed to `Metronome.tsx`). Exercise rows show
+    "Coming soon" rather than a dead or fake link, since Phase 4/5 haven't
+    built anywhere for them to go yet, Robin's explicit call over having
+    them open the metronome as a stand-in. Once exercise 2's practice
+    screen exists (this session's next step), wire its row here; leave the
+    rest "Coming soon" until Phase 5.
   - Not built yet, deliberately: Wake Lock. SPEC.md ties it to "while a
     session is open," and there's no session concept until Phase 4. Add it
     there, not here.

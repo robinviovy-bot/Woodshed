@@ -32,7 +32,7 @@ export function ResetPassword() {
       setError(describeAuthError(updateError));
       return;
     }
-    navigate("/profile", { replace: true });
+    navigate("/home", { replace: true });
   }
 
   if (loading) return <LoadingScreen />;

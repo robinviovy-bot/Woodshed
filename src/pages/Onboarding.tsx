@@ -42,7 +42,7 @@ export function Onboarding() {
 
   async function handleContinue() {
     await refreshProfile();
-    navigate("/profile", { replace: true });
+    navigate("/home", { replace: true });
   }
 
   if (step === "philosophy") {

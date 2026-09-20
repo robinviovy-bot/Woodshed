@@ -10,19 +10,18 @@ import { useMetronome } from "@/engine/metronome/useMetronome";
 const SOUND_OPTIONS: MetronomeSound[] = ["click", "beep"];
 const SOUND_LABELS: Record<MetronomeSound, string> = { click: "Click", beep: "Beep" };
 
-// Temporary test harness for Phase 3 (SPEC.md section 12: "the metronome as
-// a standalone, reliable component"). Delete this page and its /dev/metronome
-// route once Phase 4 embeds the real thing into the practice screen.
-export function MetronomeTest() {
+// Standalone metronome, reachable on its own from Home for whenever you
+// just want a click track without picking a drill.
+export function Metronome() {
   const metronome = useMetronome();
 
   return (
     <div className="mx-auto flex min-h-screen max-w-[480px] flex-col gap-8 px-6 py-10">
-      <div>
-        <h1 className="font-display text-3xl">Metronome test</h1>
-        <p className="text-sm text-ink-secondary">
-          Phase 3 scratch page. <Link to="/profile" className="text-accent">Back to profile</Link>
-        </p>
+      <div className="flex items-center justify-between">
+        <h1 className="font-display text-3xl">Metronome</h1>
+        <Link to="/home" className="text-sm text-accent">
+          Home
+        </Link>
       </div>
 
       <div className="flex flex-col items-center gap-6 rounded-card border border-line p-6">

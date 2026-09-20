@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import type { User } from "@supabase/supabase-js";
 import { useAuth } from "@/auth/useAuth";
 import { Button } from "@/components/Button";
@@ -142,7 +142,12 @@ function ProfileScreen({ user, profile }: { user: User; profile: ProfileRow }) {
   return (
     <div className="mx-auto flex min-h-screen max-w-[480px] flex-col gap-10 px-6 py-10">
       <header className="flex items-center justify-between">
-        <h1 className="font-display text-3xl">Profile</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="font-display text-3xl">Profile</h1>
+          <Link to="/home" className="text-sm text-accent">
+            Home
+          </Link>
+        </div>
         <Button variant="secondary" onClick={handleSignOut}>
           Sign out
         </Button>

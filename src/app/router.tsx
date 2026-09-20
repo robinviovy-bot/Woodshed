@@ -3,17 +3,19 @@ import { RequireAuth } from "@/auth/RequireAuth";
 import { RequireGuest } from "@/auth/RequireGuest";
 import { RequireOnboarded } from "@/auth/RequireOnboarded";
 import { ForgotPassword } from "@/pages/ForgotPassword";
+import { Home } from "@/pages/Home";
 import { Landing } from "@/pages/Landing";
-import { MetronomeTest } from "@/pages/MetronomeTest";
+import { Metronome } from "@/pages/Metronome";
 import { Onboarding } from "@/pages/Onboarding";
 import { Profile } from "@/pages/Profile";
 import { ResetPassword } from "@/pages/ResetPassword";
 import { SignIn } from "@/pages/SignIn";
 import { SignUp } from "@/pages/SignUp";
 
-// Home, exercise picker, practice, and progress screens land in later
-// build-order phases per SPEC.md section 12. Until then, /profile is the
-// de facto landing spot for a signed-in, onboarded user.
+// ExercisePicker, practice, and progress screens land in later build-order
+// phases per SPEC.md section 12. /home is the landing spot for a signed-in,
+// onboarded user; its exercise list is read-only ("coming soon") until
+// Phase 4/5 give it somewhere real to link to.
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -60,6 +62,16 @@ export const router = createBrowserRouter([
     ),
   },
   {
+    path: "/home",
+    element: (
+      <RequireAuth>
+        <RequireOnboarded>
+          <Home />
+        </RequireOnboarded>
+      </RequireAuth>
+    ),
+  },
+  {
     path: "/profile",
     element: (
       <RequireAuth>
@@ -70,11 +82,12 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    // Phase 3 scratch route, see MetronomeTest.tsx's header comment.
-    path: "/dev/metronome",
+    // Standalone, reachable without finishing onboarding -- it doesn't
+    // touch profile data.
+    path: "/metronome",
     element: (
       <RequireAuth>
-        <MetronomeTest />
+        <Metronome />
       </RequireAuth>
     ),
   },

@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/Button";
 import { SegmentedControl } from "@/components/SegmentedControl";
-import { POOL_LABELS } from "@/engine/practice/shared";
+import { POOL_DESCRIPTIONS, POOL_LABELS } from "@/engine/practice/shared";
 import type { Exercise, Pool } from "@/types/database";
 
 // Shared setup screen for every mode: pick a pool, then start. Nothing
@@ -32,7 +32,9 @@ export function ExerciseSetup({
           options={exercise.available_pools}
           labels={POOL_LABELS}
           onChange={onPoolChange}
+          wrap
         />
+        <p className="text-xs text-ink-muted">{POOL_DESCRIPTIONS[pool]}</p>
       </div>
       <Button onClick={onStart}>Start</Button>
       <Link to="/home" className="text-center text-sm text-ink-muted">

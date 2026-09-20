@@ -158,19 +158,35 @@ Exercise 4, complete pool, 80 BPM, rated Solid. Celebrated once, ends nothing.
 
 ### Freshness
 
-Computed at read time from days since the drill was last practiced. Never
-stored.
+PROGRAM level only. Individual exercises and drills carry no freshness state
+of their own (see the Exercise picker in section 7). Only the whole program
+(for example Fretboard 101) has a temperature, computed at read time from its
+practice history. Never stored as a snapshot.
 
-| State | Days since last practice |
+| State | Condition |
 |---|---|
-| fresh | 0 to 2 |
-| warm | 3 to 6 |
-| fading | 7 to 13 |
-| cold | 14 or more |
-| untouched | never practiced |
+| Cold | Never practiced, or 14 or more days since anything in the program was last practiced |
+| Cool | 7 to 13 days since anything in the program was last practiced |
+| Cooling down | 3 to 6 days since anything in the program was last practiced |
+| Warming up | Practiced today or yesterday, current streak of 1 to 2 consecutive days |
+| Hot | Practiced today or yesterday, current streak of 3 or more consecutive days |
 
-Program freshness follows the same scale, driven by the last day ANY drill in
-that program was practiced.
+The streak counts any exercise, BPM, or pool inside the program as the same
+practice. It is not tied to one specific drill: playing exercise 1 today,
+exercise 3 tomorrow, and exercise 2 the day after keeps the same streak alive.
+
+One missed day pauses the streak rather than breaking it (a small "paused"
+mark shows next to the flame, and the state holds where it was). Missing a
+second day in a row breaks the streak for real, and cooling begins. This
+mirrors the app-wide streak's one-rest-day rule in section 6, so the two
+systems agree with each other rather than each having their own logic.
+
+Visually this reads as a single flame whose vividness scales continuously
+through warming up, hot, cooling down, and cool, using the palette's warm
+tones, never the cold blue-gray section 10 rules out elsewhere. Cold switches
+to an actual snowflake shape instead of a dying ember, a deliberate break
+from the flame metaphor, rendered in the same warm-neutral tones as the rest
+of the palette rather than literal ice blue.
 
 ### Confidence
 
@@ -280,15 +296,20 @@ does, then offers sign up and sign in.
   day is warm as soon as anything inside the program was practiced that day.
 - "Due for review": up to three of the stalest drills already practiced at
   least once, each a one tap row showing exercise name, BPM, pool badge and
-  relative date. Hide this block entirely when everything is fresh.
+  relative date (plain text, no colored dot, since freshness no longer
+  exists at the drill level, see section 5). Hide this block entirely when nothing
+  has gone stale enough to surface.
 - "Continue": resumes the last drill practiced
-- Program cards with name, freshness dot and a "Practice" button
+- Program cards with name, temperature indicator (section 5's flame/snowflake)
+  and a "Practice" button
 
 ### Exercise picker
 
 Rows are exercises. Expanding one reveals its BPM ladder, and each BPM row
-reveals its available pools as a segmented control. Every drill row carries a
-freshness dot and a relative date ("2 days ago", "never"). Nothing is locked.
+reveals its available pools as a segmented control. Nothing is locked, and no
+row carries any freshness indicator, since that only exists at the program
+level now (section 5). This screen absorbs what a separate "Progress" screen used
+to do; picking a drill to practice is the only job it needs to do well.
 
 ### Practice screen, the heart of the app
 
@@ -344,21 +365,18 @@ Accent the first beat with a higher pitched click. Resume the AudioContext on
 the first user gesture so iOS Safari behaves. Request a Wake Lock while a
 session is open so the screen stays on, and release it on session end.
 
-### Progress
+### Progress (dropped as a separate screen)
 
-A freshness heatmap rather than a checklist.
+Removed in a design session with Robin, in favor of shipping a usable app
+sooner rather than refining a screen nobody had tried yet. Its job of
+choosing a drill is now covered entirely by the Exercise picker above, and
+its freshness heatmap grid does not carry over now that freshness lives only
+at the program level (section 5).
 
-- Exercise 1 sits on its own row, no BPM columns, one cell per pool
-- Exercises 2 to 4 form a grid: rows are exercises, columns are
-  40 / 50 / 60 / 70 / 80 BPM
-- Each cell shows the freshest pool practiced at that tempo, colored by
-  freshness, carrying its letter badge N, A, X or C
-- Untouched cells stay neutral
-- Tapping a cell opens its pools individually, each with its last practiced
-  date, session count and confidence history
-
-Above the grid, three numbers: days practiced in the last 30, total sessions,
-distinct drills touched.
+The three summary numbers this screen used to show (days practiced in the
+last 30, total sessions, distinct drills touched) don't have a home for now.
+Revisit once the core practice loop is actually in daily use and it's clear
+whether they're missed.
 
 ### Profile
 
@@ -451,7 +469,7 @@ staying in first position.
 
 Possible once other players join, none of it built now, but keep the data
 model compatible: opt in shared streaks between friends, a teacher view over a
-student's freshness grid, and user-authored programs. The constraint that
+student's practice history, and user-authored programs. The constraint that
 follows today: keep every table keyed on `user_id` and avoid any assumption
 that a program belongs to nobody in particular.
 
@@ -499,13 +517,17 @@ neutral fill   #EFE9DE
 | Color | Meaning |
 |---|---|
 | amber | The drill being practiced right now, and "due for review" |
-| sage at 100% | fresh |
-| sage at 55% | warm |
-| sage at 25% | fading |
-| neutral fill | cold and untouched |
+| flame tone (new, not chosen yet) | Program temperature only (section 5): full intensity at Hot, fading through Warming up and Cooling down |
+| neutral fill | Cool, and Cold (Cold shows as a snowflake shape instead of a faint flame) |
 
-Freshness reads as a fade from sage toward neutral, so a neglected grid
-visibly loses its color. Amber stays rare so it keeps meaning "here, now".
+Amber stays reserved and rare, exactly as before. The program-level flame
+deliberately does not reuse amber, so "here, now" keeps its one meaning
+instead of also standing for "this program is hot." That means a new warm
+tone is needed for the flame itself, distinct from amber, picked when this
+actually gets built (Phase 7) rather than guessed now. Sage no longer
+represents freshness, since freshness only exists at the program level;
+it stays free for other uses later (confidence ratings, for example) if
+wanted.
 
 ### Typography, loaded from Google Fonts
 
@@ -563,7 +585,8 @@ Ship this as an installable PWA so it lives on the home screen.
 4. The practice screen around that metronome, for exercise 2 first
 5. The other three exercise modes on the same engine
 6. Session persistence, drill_stats updates, streak and XP logic
-7. Home, exercise picker and the progress heatmap
+7. Home (including the program-level flame/snowflake from section 5) and
+   the exercise picker
 8. Milestone cards and the tempo suggestion prompt
 9. PWA manifest, service worker, icons
 10. Deploy to Vercel

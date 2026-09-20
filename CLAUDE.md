@@ -248,6 +248,33 @@ Tracks SPEC.md section 12. Update this after finishing each phase.
     Added a placeholder "Click"/"Beep" choice — the DB column just stores a
     string, and Phase 3's actual Web Audio metronome will decide what these
     mean (or whether more options make sense).
+- **Design session (2026-09-20, before Phase 3): freshness reworked to
+  program-level hot/cold.** Documentation only, nothing implemented yet.
+  SPEC.md sections 5 and 7 were rewritten in place to reflect this (read
+  those directly rather than this summary):
+  - Freshness now exists only at the program level (Cold, Cool, Cooling
+    down, Warming up, Hot), driven by a streak that counts any practice
+    inside the program, not one specific drill. One missed day pauses the
+    streak (small "paused" mark), a second missed day breaks it.
+    Individual exercises/drills carry no freshness state at all anymore.
+  - The Progress screen (the old exercise x BPM heatmap grid) is dropped
+    entirely. The Exercise picker absorbs its job; picking a drill to
+    practice is now its only responsibility.
+  - Visual: one flame shape whose vividness scales through the four warm
+    states, using a new warm tone that is deliberately NOT amber (keeps
+    amber's "here, now" meaning from getting diluted). Cold switches to an
+    actual snowflake shape, kept in warm-neutral tones, not literal blue.
+  - Implementation notes for whenever this becomes real (Phase 6 or 7):
+    the existing `daily_activity` table (already keyed on user_id, day,
+    program_id, with an `is_rest_day` flag) looks like the right place to
+    compute the per-program streak from at read time, but its `is_rest_day`
+    today reflects the single app-wide streak from section 6, not a
+    per-program one. Once a second program exists this needs its own
+    per-program rest-day semantics, not a shared flag. Work this out
+    properly at implementation time rather than guessing now.
+  - Explicitly deprioritized per Robin: getting the practice loop usable
+    matters more right now than refining a screen nobody has tried yet.
+    Don't revisit this further until Phase 7.
 - [ ] Phase 3 — Metronome (lookahead scheduler, BPM stepper, tap tempo, time
   signatures, beat indicator) as a standalone component
 - [ ] Phase 4 — Practice screen around the metronome, exercise 2 first

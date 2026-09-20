@@ -139,6 +139,14 @@ Play the first note going up across the 6 strings, the next coming down,
 alternating through the whole sequence, without stopping. A "Draw new
 sequence" button is always available.
 
+A "Start test" button offers a second, guided way to play the same
+sequence: a 3-2-1 countdown timed to the metronome, then the screen shows
+one note at a time (instead of the whole sequence at once) for six beats
+each, one beat per string, with the next note shown small alongside the
+current one. It stops automatically after the last note and returns to the
+normal view. Starting a test starts the metronome too if it wasn't already
+playing.
+
 ### Tempo ladder
 
 40, 50, 60, 70, 80 BPM, applied to exercises 2, 3 and 4.

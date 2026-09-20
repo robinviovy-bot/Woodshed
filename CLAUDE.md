@@ -433,6 +433,32 @@ Tracks SPEC.md section 12. Update this after finishing each phase.
     not something repeated a set number of times, so `reps_target` doesn't
     apply the same way. Their summaries show pairs/sequences covered and
     duration only.
+  - **Layout bug found after Phase 5, per Robin:** all three mode screens'
+    outer container used `justify-between` with no minimum gap between the
+    middle content and the metronome controls below it. On a short
+    viewport (a phone in landscape, which is how you'd prop one up to read
+    notes while playing) there's no leftover space for `justify-between` to
+    distribute, so the "Draw new sequence"/"Draw new pair"/note-navigator
+    area and the metronome's play button ended up almost touching. Fixed by
+    adding a fixed `gap-8` to all three screens' outer container -- this is
+    a floor `justify-between` still adds extra space on top of on taller
+    viewports, not a replacement for it. Verified on an 812x375 emulated
+    viewport (the shortest realistic case) across all three modes.
+  - **"Start test" added after Phase 5, per Robin:** a second way to play
+    exercise 4's sequence, alongside the existing "Draw new sequence" full
+    list. `useSequenceTest` (`engine/practice/`) runs a 3-2-1 countdown
+    timed to the metronome (auto-starting it if it wasn't already playing),
+    then steps through the same sequence one note at a time -- the current
+    note big, the next one small beside it (`SequenceTestDisplay.tsx`) --
+    six metronome beats per note, one per string. It stops automatically
+    after the last note and drops back to the normal view; per Robin, it
+    does not loop. Counts against a new `tickCount` on `useMetronome`
+    (beats elapsed since the current play started, resetting on `start()`)
+    rather than `currentBeat`, which wraps every bar and would tie the
+    six-beats-per-note timing to whichever time signature happens to be
+    selected. `useMetronome` also now exports `start` directly (previously
+    only reachable via `toggle`) since the test needs to start playback
+    without also being able to stop it from the same call.
 - [ ] Phase 6 — Session persistence, drill_stats, streak and XP logic
 - [ ] Phase 7 — Home, exercise picker, progress heatmap
 - [ ] Phase 8 — Milestone cards, tempo suggestion prompt

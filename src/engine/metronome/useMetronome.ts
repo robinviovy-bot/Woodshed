@@ -28,6 +28,7 @@ export function useMetronome(initialBpm = 80, initialSound: MetronomeSound = "cl
   const [timeSignature, setTimeSignatureState] = useState<TimeSignature>("4/4");
   const [sound, setSound] = useState<MetronomeSound>(initialSound);
   const [currentBeat, setCurrentBeat] = useState(-1);
+  const [tickCount, setTickCount] = useState(0);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const schedulerIdRef = useRef<number | null>(null);
@@ -36,6 +37,7 @@ export function useMetronome(initialBpm = 80, initialSound: MetronomeSound = "cl
   const nextBeatRef = useRef(0);
   const notesInQueueRef = useRef<QueuedNote[]>([]);
   const tapTimesRef = useRef<number[]>([]);
+  const tickCountRef = useRef(0);
 
   // Refs mirroring state that the scheduler/draw loops read on every tick.
   // Without these, the closures captured when start() was called would see
@@ -79,13 +81,19 @@ export function useMetronome(initialBpm = 80, initialSound: MetronomeSound = "cl
     const audioContext = audioContextRef.current;
     if (audioContext) {
       let lastPlayed: QueuedNote | undefined;
+      let played = 0;
       while (
         notesInQueueRef.current.length &&
         notesInQueueRef.current[0].time < audioContext.currentTime
       ) {
         lastPlayed = notesInQueueRef.current.shift();
+        played++;
       }
-      if (lastPlayed) setCurrentBeat(lastPlayed.beat);
+      if (lastPlayed) {
+        setCurrentBeat(lastPlayed.beat);
+        tickCountRef.current += played;
+        setTickCount(tickCountRef.current);
+      }
     }
     rafIdRef.current = requestAnimationFrame(drawFrame);
   }, []);
@@ -118,6 +126,10 @@ export function useMetronome(initialBpm = 80, initialSound: MetronomeSound = "cl
 
     nextBeatRef.current = 0;
     nextNoteTimeRef.current = audioContext.currentTime + 0.05;
+    // Reset so anything counting beats since this play started (the
+    // sequence test run, see useSequenceTest) has a clean baseline.
+    tickCountRef.current = 0;
+    setTickCount(0);
     schedulerIdRef.current = window.setInterval(scheduler, SCHEDULER_INTERVAL);
     rafIdRef.current = requestAnimationFrame(draw);
     setIsPlaying(true);
@@ -166,7 +178,14 @@ export function useMetronome(initialBpm = 80, initialSound: MetronomeSound = "cl
     timeSignature,
     sound,
     currentBeat,
+    // Beats elapsed since the current play started (never resets on its
+    // own while playing, unlike currentBeat which wraps every bar) --
+    // what useSequenceTest counts against to time the test run's 3-2-1
+    // countdown and its six-beats-per-note advance regardless of the
+    // chosen time signature.
+    tickCount,
     beatsPerBar: BEATS_PER_BAR[timeSignature],
+    start,
     toggle,
     stop,
     setBpm,

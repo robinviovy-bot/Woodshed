@@ -6,7 +6,8 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 // Minimum 44px tap target per SPEC.md section 10 layout rules.
 export function Button({ variant = "primary", className = "", ...props }: ButtonProps) {
-  const base = "min-h-11 rounded-control px-5 font-medium transition-colors duration-150";
+  const base =
+    "min-h-11 whitespace-nowrap rounded-control px-5 font-medium transition-colors duration-150";
   const variants: Record<NonNullable<ButtonProps["variant"]>, string> = {
     primary: "bg-accent text-background",
     secondary: "border bg-transparent text-ink",

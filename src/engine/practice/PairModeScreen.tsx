@@ -97,7 +97,7 @@ export function PairModeScreen({
 
   return (
     <div
-      className="mx-auto flex min-h-screen max-w-[480px] flex-col justify-between px-6 py-6"
+      className="mx-auto flex min-h-screen max-w-[480px] flex-col justify-between gap-8 px-6 py-6"
       style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom))" }}
     >
       <div className="flex items-center justify-between">

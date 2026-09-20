@@ -66,7 +66,9 @@ src/
                   RequireAuth, never the reverse).
   pages/          Route-level screens (one per route): Landing, SignUp,
                   SignIn, ForgotPassword, ResetPassword, Onboarding, Profile,
-                  Home, Metronome, Practice, ExercisePicker. No Progress
+                  Home, Metronome, Practice, ExercisePicker, Calendar (Phase
+                  7, the month-by-month practiced-days view opened from
+                  Home's streak badge). No Progress
                   screen -- dropped entirely in the freshness redesign (see
                   the design-session note below); the exercise picker
                   absorbed its job.
@@ -614,23 +616,34 @@ Tracks SPEC.md section 12. Update this after finishing each phase.
   header (avatar, streak badge -- both from the Phase 6 entry above), the
   metronome icon, a greeting line with best streak plus
   `components/LevelProgress.tsx` (level and an XP bar filling across the
-  current level's own span, `250*n*(n-1)` per SPEC.md section 6),
-  `components/ActivityHeatmap.tsx` (8 weeks x 7 days, small squares,
-  `--color-success` for a practiced day vs `--color-line` for empty --
-  scoped to the real Fretboard 101 `program_id` via `daily_activity`, not
-  the single-program user_stats shortcut, since daily_activity already
-  carries a real per-program id), a "Continue" button (resumes the most
-  recently practiced drill) when one exists, `components/DueForReview.tsx`
-  (up to three drills stale 3+ days per `drill_stats.last_practiced_on`,
-  hidden entirely when none qualify) when any exist, then Lessons.
-  "Continue" and "Due for review" rows both deep-link straight into
-  practicing via new `?pool=&bpm=` query params on `/practice/:slug`
-  (`Practice.tsx` reads them and passes `initialPool`/`initialBpm` to
-  whichever mode screen renders) rather than landing on ExerciseSetup --
-  true to SPEC.md's "one tap row" wording. Each mode screen starts
-  `screenPhase` at `"practicing"` directly when `initialPool` is set, and
-  an `autoStarted` ref-guarded effect calls `usePracticeSession.begin()`
-  once on mount in ExerciseSetup's onStart's place.
+  current level's own span, `250*n*(n-1)` per SPEC.md section 6), a
+  "Continue" button (resumes the most recently practiced drill) when one
+  exists, `components/DueForReview.tsx` (up to three drills stale 3+ days
+  per `drill_stats.last_practiced_on`, hidden entirely when none qualify)
+  when any exist, then Lessons. "Continue" and "Due for review" rows both
+  deep-link straight into practicing via new `?pool=&bpm=` query params on
+  `/practice/:slug` (`Practice.tsx` reads them and passes
+  `initialPool`/`initialBpm` to whichever mode screen renders) rather than
+  landing on ExerciseSetup -- true to SPEC.md's "one tap row" wording.
+  Each mode screen starts `screenPhase` at `"practicing"` directly when
+  `initialPool` is set, and an `autoStarted` ref-guarded effect calls
+  `usePracticeSession.begin()` once on mount in ExerciseSetup's onStart's
+  place.
+  - **Heatmap replaced by a real calendar, per Robin, same session:** the
+    original 8 week small-square heatmap (`components/ActivityHeatmap.tsx`)
+    is deleted -- Robin found it unnecessary on Home itself and asked for
+    a proper month-by-month calendar instead, opened by tapping the streak
+    badge (now a `Link` to it) rather than shown inline. New
+    `pages/Calendar.tsx` (route `/calendar`) renders one month at a time
+    with prev/next navigation (next disabled once you're back at the
+    current month), reading the same per-program `daily_activity` data the
+    heatmap used to, scoped to Fretboard 101's real `program_id`.
+  - **Continue button redesigned, per Robin, same session:** "Continue"
+    centered as the main line, with the lesson and exercise name on a
+    smaller second line underneath (`{lessonTitle} · {exerciseTitle}`) so
+    it fits on one row -- needed extending the drills-to-exercises embed
+    query one level further, to `exercises(..., programs(title))`, since
+    `ContinueItem` didn't carry a lesson name before.
   - **Scope cut, per Robin:** the exercise picker itself doesn't get the
     "expanding rows reveal a BPM ladder, each BPM reveals a pool segmented
     control" treatment SPEC.md section 7 describes -- with only one lesson

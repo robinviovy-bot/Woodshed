@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router-dom";
 import { RequireAuth } from "@/auth/RequireAuth";
 import { RequireGuest } from "@/auth/RequireGuest";
 import { RequireOnboarded } from "@/auth/RequireOnboarded";
+import { Calendar } from "@/pages/Calendar";
 import { ExercisePicker } from "@/pages/ExercisePicker";
 import { ForgotPassword } from "@/pages/ForgotPassword";
 import { Home } from "@/pages/Home";
@@ -89,6 +90,16 @@ export const router = createBrowserRouter([
     element: (
       <RequireAuth>
         <Metronome />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: "/calendar",
+    element: (
+      <RequireAuth>
+        <RequireOnboarded>
+          <Calendar />
+        </RequireOnboarded>
       </RequireAuth>
     ),
   },

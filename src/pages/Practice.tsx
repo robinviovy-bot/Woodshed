@@ -109,6 +109,18 @@ export function Practice() {
   const metronome = useMetronome(40, (profile?.metronome_sound as MetronomeSound) ?? "click");
   const practice = useSingleNotePractice(pool);
 
+  // The metronome only ever runs while a drill is actively open (SPEC.md's
+  // practice-screen section): reaching the lap-finished state, the
+  // confidence prompt, or the summary all stop it rather than letting it
+  // keep going in the background. It never auto-restarts on its own --
+  // stopping it here just means the player has to press play again, same
+  // as after any other pause.
+  const stopMetronome = metronome.stop;
+  useEffect(() => {
+    const isActivelyPracticing = screenPhase === "practicing" && practice.phase === "active";
+    if (!isActivelyPracticing) stopMetronome();
+  }, [screenPhase, practice.phase, stopMetronome]);
+
   if (loadError) {
     return (
       <div className="mx-auto flex min-h-screen max-w-[480px] flex-col items-center justify-center gap-4 px-6 text-center">

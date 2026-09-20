@@ -369,6 +369,19 @@ Tracks SPEC.md section 12. Update this after finishing each phase.
     (`notesCovered * config.reps_target`) instead of tallied, trusting the
     instruction was followed, same unverified spirit as the confidence
     rating right above it.
+  - **Reversed a "CRITICAL" spec line, per Robin:** SPEC.md's practice
+    screen used to say the metronome "keeps playing... across the end of
+    the queue." It now does the opposite on purpose: the metronome only
+    ever runs while a drill is actively open, and stops itself (never
+    auto-restarts) the moment you hit lap-finished, the confidence prompt,
+    or the summary. SPEC.md's wording was updated to match rather than
+    left contradicting the code. Implemented as a `useEffect` in
+    `Practice.tsx` watching `screenPhase`/`practice.phase`, calling the
+    now-exposed `metronome.stop()`. Applies to every exercise mode, not
+    just this one; the standalone `/metronome` tool is unaffected since
+    it's not tied to a drill. Verified: played through a full lap with the
+    metronome running, confirmed it stopped at lap-finished and did not
+    resume on its own after "Shuffle again."
 - [ ] Phase 5 — Remaining exercise modes (1, 3, 4) on the same engine
 - [ ] Phase 6 — Session persistence, drill_stats, streak and XP logic
 - [ ] Phase 7 — Home, exercise picker, progress heatmap

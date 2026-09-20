@@ -354,9 +354,15 @@ short summary showing notes covered, reps logged, session length, XP awarded
 if it was the first session of the day, and the new streak.
 
 **CRITICAL metronome behavior:** the metronome loops completely independently
-of the exercise flow. Notes change only when the user taps "Next". The
-metronome keeps playing without interruption during that change, and across
-the end of the queue.
+of the exercise flow. Notes change only when the user taps "Next" (or the
+prev/next arrows). The metronome keeps playing without interruption during
+that change. It only ever runs while a drill is actively open, though:
+reaching the end of the queue, the confidence prompt, or the summary all
+stop it, since those aren't practicing anymore. Never auto-restarts on its
+own after that; the player presses play again when they're ready. This
+applies to every exercise, not just this one. The standalone metronome
+reachable from the home screen is unaffected, since it isn't tied to any
+exercise.
 
 **Metronome implementation:** use the Web Audio API with a lookahead
 scheduler, scheduling clicks about 100 ms ahead against

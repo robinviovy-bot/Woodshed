@@ -168,6 +168,7 @@ export function useMetronome(initialBpm = 80, initialSound: MetronomeSound = "cl
     currentBeat,
     beatsPerBar: BEATS_PER_BAR[timeSignature],
     toggle,
+    stop,
     setBpm,
     setTimeSignature,
     setSound,

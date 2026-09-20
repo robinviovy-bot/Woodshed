@@ -10,11 +10,13 @@ import { TapTempoButton } from "@/engine/metronome/TapTempoButton";
 import { TimeSignaturePicker } from "@/engine/metronome/TimeSignaturePicker";
 import type { MetronomeSound } from "@/engine/metronome/types";
 import { useMetronome } from "@/engine/metronome/useMetronome";
+import type { AccidentalSpelling } from "@/engine/practice/notes";
 import { NoteNavigator } from "@/engine/practice/NoteNavigator";
 import { POOL_LABELS, pluralize, formatDuration } from "@/engine/practice/shared";
 import { SessionSummary } from "@/engine/practice/SessionSummary";
 import { usePracticeSession } from "@/engine/practice/usePracticeSession";
 import { useSingleNotePractice } from "@/engine/practice/useSingleNotePractice";
+import { useSpellingChoices } from "@/engine/practice/useSpellingChoices";
 import type { Exercise, Pool } from "@/types/database";
 
 type ScreenPhase = "setup" | "practicing" | "summary";
@@ -39,12 +41,14 @@ export function SingleModeScreen({
 }) {
   const [screenPhase, setScreenPhase] = useState<ScreenPhase>(initialPool ? "practicing" : "setup");
   const [pool, setPool] = useState<Pool>(initialPool ?? exercise.default_pool);
+  const [accidentalSpelling, setAccidentalSpelling] = useState<AccidentalSpelling>("both");
   const [sessionStart, setSessionStart] = useState<number | null>(() => (initialPool ? Date.now() : null));
   const [sessionEnd, setSessionEnd] = useState<number | null>(null);
 
   const metronome = useMetronome(initialBpm ?? 40, metronomeSound);
   const practice = useSingleNotePractice(pool);
   const session = usePracticeSession(exercise, pool);
+  const [preferSharp] = useSpellingChoices(accidentalSpelling, 1, practice.historyIndex);
 
   // The metronome only ever runs while a drill is actively open (SPEC.md's
   // practice-screen section): reaching lap-finished or the summary both
@@ -81,6 +85,8 @@ export function SingleModeScreen({
         exercise={exercise}
         pool={pool}
         onPoolChange={setPool}
+        accidentalSpelling={accidentalSpelling}
+        onAccidentalSpellingChange={setAccidentalSpelling}
         onStart={() => {
           setSessionStart(Date.now());
           session.begin(exercise.uses_metronome ? metronome.bpm : null, metronome.timeSignature);
@@ -152,6 +158,7 @@ export function SingleModeScreen({
             <NoteNavigator
               pitchClass={practice.currentPitchClass}
               notation={notation}
+              preferSharp={preferSharp}
               canGoBack={practice.canGoBack}
               onPrevious={practice.previous}
               onNext={practice.next}

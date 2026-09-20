@@ -58,12 +58,28 @@ export interface NoteDisplay {
   secondary: string;
 }
 
+// Setup-time choice (per Robin): showing an accidental's full "C# / Db"
+// dual spelling everywhere was too wide and kept wrapping on a phone,
+// especially with several accidentals on screen at once (the accidentals
+// pool, or a pair/sequence that happens to draw more than one). Instead
+// the player picks up front whether they want sharps, flats, or both --
+// "both" re-rolls sharp-vs-flat at random each time a note is drawn
+// (resolveSpelling below), not a fixed choice for the whole session, so
+// they still see every spelling over time.
+export type AccidentalSpelling = "sharp" | "flat" | "both";
+
+export function resolveSpelling(spelling: AccidentalSpelling): boolean {
+  if (spelling === "sharp") return true;
+  if (spelling === "flat") return false;
+  return Math.random() < 0.5;
+}
+
 // "primary" is whatever notation the profile prefers, "secondary" the
 // other one underneath in muted text, per SPEC.md section 7's practice
-// screen ("a big 'C' with 'do' underneath"). For an accidental, both lines
-// show the dual enharmonic spelling (section 3), just in different
-// notations.
-export function getNoteDisplay(pitchClass: number, notation: string): NoteDisplay {
+// screen ("a big 'C' with 'do' underneath"). For an accidental, `preferSharp`
+// (resolved once per drawn note -- see useSpellingChoices -- not
+// recomputed on every render) picks which single spelling to show.
+export function getNoteDisplay(pitchClass: number, notation: string, preferSharp = true): NoteDisplay {
   const natural = NATURALS.find((n) => n.pitchClass === pitchClass);
   if (natural) {
     return notation === "fr"
@@ -74,8 +90,8 @@ export function getNoteDisplay(pitchClass: number, notation: string): NoteDispla
   const accidental = ACCIDENTALS.find((a) => a.pitchClass === pitchClass);
   if (!accidental) throw new Error(`Unknown pitch class: ${pitchClass}`);
 
-  const en = `${accidental.enSharp} / ${accidental.enFlat}`;
-  const fr = `${accidental.frSharp} / ${accidental.frFlat}`;
+  const en = preferSharp ? accidental.enSharp : accidental.enFlat;
+  const fr = preferSharp ? accidental.frSharp : accidental.frFlat;
   return notation === "fr" ? { primary: fr, secondary: en } : { primary: en, secondary: fr };
 }
 

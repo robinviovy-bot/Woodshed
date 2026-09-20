@@ -32,8 +32,24 @@ export function useSequenceTest(sequenceLength: number, metronome: ReturnType<ty
   const { tickCount, isPlaying, beatsPerBar, start: startMetronome, stop: stopMetronome, setUpcomingBeat } =
     metronome;
 
+  // Pausing (the play/pause button is really a start/full-stop toggle --
+  // see useMetronome.toggle) resets tickCount the same way a fresh start()
+  // does, which would otherwise make the elapsed-beats math below go
+  // negative and crash SequenceTestDisplay on an out-of-range note index.
+  // Treat a manual pause mid countdown/run the same as "Stop test" rather
+  // than trying to resume a paused beat count.
   useEffect(() => {
-    if (phase === "idle") return;
+    // This IS the external system (the metronome) being synchronized into
+    // local state, not state that could be derived during render: phase
+    // must actually change (and stay changed) so resuming playback
+    // afterward doesn't resurrect a stale countdown/run instead of
+    // staying idle.
+    // oxlint-disable-next-line react/set-state-in-effect
+    if (phase !== "idle" && !isPlaying) setPhase("idle");
+  }, [isPlaying, phase]);
+
+  useEffect(() => {
+    if (phase === "idle" || !isPlaying) return;
 
     if (phase === "countdown") {
       const elapsed = tickCount - baselineTickRef.current;
@@ -56,7 +72,7 @@ export function useSequenceTest(sequenceLength: number, metronome: ReturnType<ty
       return;
     }
     if (index !== noteIndex) setNoteIndex(index);
-  }, [tickCount, phase, sequenceLength, noteIndex, stopMetronome]);
+  }, [tickCount, phase, isPlaying, sequenceLength, noteIndex, stopMetronome]);
 
   function start() {
     // Read isPlaying BEFORE calling startMetronome(), which resets

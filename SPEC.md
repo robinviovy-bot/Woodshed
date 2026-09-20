@@ -84,7 +84,13 @@ The app tracks NOTES only and never prescribes a fret range, because the
 usable neck depends on the instrument. The player decides where to play each
 note.
 
-Accidentals always display both enharmonic spellings, for example "A# / Bb".
+Before starting, the player also picks how accidentals should display:
+sharps, flats, or both. Showing both spellings together at once (e.g.
+"A# / Bb") turned out too wide and wrapped awkwardly on a phone, especially
+with several accidentals on screen at once. "Both" doesn't fix a single
+choice for the session either -- it re-rolls sharp vs. flat at random each
+time a note is drawn, so every spelling still turns up over time; only one
+spelling ever shows at once.
 
 ---
 

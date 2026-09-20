@@ -1,3 +1,4 @@
+import type { AccidentalSpelling } from "@/engine/practice/notes";
 import type { Pool } from "@/types/database";
 
 export const POOL_LABELS: Record<Pool, string> = {
@@ -15,6 +16,12 @@ export const POOL_DESCRIPTIONS: Record<Pool, string> = {
   accidentals: "The 5 sharp and flat notes.",
   chromatic: "All 12 notes, picked at random each time.",
   complete: "All 12 notes, each one played exactly once before repeating.",
+};
+
+export const ACCIDENTAL_SPELLING_LABELS: Record<AccidentalSpelling, string> = {
+  sharp: "Sharps",
+  flat: "Flats",
+  both: "Both",
 };
 
 export function pluralize(count: number, noun: string): string {

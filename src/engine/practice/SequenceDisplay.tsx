@@ -8,14 +8,16 @@ import { getNoteDisplay } from "@/engine/practice/notes";
 export function SequenceDisplay({
   sequence,
   notation,
+  preferSharp,
 }: {
   sequence: number[];
   notation: string;
+  preferSharp: boolean[];
 }) {
   return (
     <div className="flex flex-wrap justify-center gap-x-4 gap-y-6">
       {sequence.map((pitchClass, index) => {
-        const { primary, secondary } = getNoteDisplay(pitchClass, notation);
+        const { primary, secondary } = getNoteDisplay(pitchClass, notation, preferSharp[index]);
         return (
           <div key={index} className="flex flex-col items-center gap-1">
             <DirectionArrow direction={index % 2 === 0 ? "up" : "down"} />

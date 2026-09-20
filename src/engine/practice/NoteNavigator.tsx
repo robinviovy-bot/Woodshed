@@ -35,12 +35,14 @@ function ArrowButton({
 export function NoteNavigator({
   pitchClass,
   notation,
+  preferSharp,
   canGoBack,
   onPrevious,
   onNext,
 }: {
   pitchClass: number;
   notation: string;
+  preferSharp: boolean;
   canGoBack: boolean;
   onPrevious: () => void;
   onNext: () => void;
@@ -48,7 +50,7 @@ export function NoteNavigator({
   return (
     <div className="flex items-center gap-2">
       <ArrowButton direction="left" onClick={onPrevious} disabled={!canGoBack} />
-      <NoteDisplay pitchClass={pitchClass} notation={notation} />
+      <NoteDisplay pitchClass={pitchClass} notation={notation} preferSharp={preferSharp} />
       <ArrowButton direction="right" onClick={onNext} />
     </div>
   );

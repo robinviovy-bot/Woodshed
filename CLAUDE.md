@@ -725,3 +725,43 @@ Tracks SPEC.md section 12. Update this after finishing each phase.
     directly first; the rewrite only kicks in when no file matches, which
     is exactly the SPA-routing case). Any static host for a client-routed
     SPA needs this same fallback, not just Vercel.
+- **Post-launch fixes, found once Robin was using the real deployed site:**
+  a real crash and a design change, both in exercise 4's "Start test" area.
+  - **Crash fixed: pausing mid countdown/run.** Robin hit "Unexpected
+    application error" pressing pause during the sequence test. Root cause:
+    the play/pause button is really a start/full-stop toggle
+    (`useMetronome.toggle`), and `stop()` resets `tickCount` to 0 the same
+    way a fresh `start()` does. `useSequenceTest`'s elapsed-beats math
+    (`tickCount - baselineTickRef.current`) went negative the instant that
+    happened, producing a negative `noteIndex` that `SequenceTestDisplay`
+    fed straight into `getNoteDisplay(sequence[negativeIndex], ...)` --
+    `sequence[-2]` is `undefined` in JS, and `getNoteDisplay` throws on an
+    unrecognized pitch class. This is, in hindsight, exactly the "Unknown
+    pitch class: undefined" error seen intermittently in the browser
+    console earlier in the project and dismissed at the time as Vite Fast
+    Refresh churn from live-editing -- it was real, just not yet triggered
+    on purpose. Fixed with a dedicated effect that treats the metronome
+    going silent mid-test the same as pressing "Stop test" (phase back to
+    idle) rather than trying to resume a paused beat count -- resuming
+    playback afterward now just plays the metronome normally instead of
+    resurrecting the test.
+  - **Accidental note display redesigned, per Robin.** Showing both
+    enharmonic spellings at once (e.g. "C# / Db", per the original SPEC.md
+    section 3 reading) took too much horizontal space and wrapped
+    awkwardly, especially with several accidentals on screen together (the
+    accidentals pool, or a pair/sequence that draws more than one). Setup
+    now asks up front -- Sharps / Flats / Both, shown whenever the chosen
+    pool isn't naturals-only -- and `getNoteDisplay` shows exactly one
+    spelling instead of joining both with `/`. "Both" re-rolls sharp vs.
+    flat at random each time a note is drawn (new `resolveSpelling` in
+    notes.ts) rather than fixing one choice for the whole session, so every
+    spelling still turns up over time; the underlying pitch-class draw
+    logic (no repeats until a lap/pool is exhausted) is completely
+    unaffected, since spelling is decided independently on top of it. New
+    `engine/practice/useSpellingChoices.ts` resolves `count` choices at
+    once, memoized on a stable per-occurrence key (`historyIndex` for
+    single mode, `pairsCovered` for pair, `sequencesCovered` for sequence)
+    so "both" mode doesn't flicker between spellings on unrelated
+    re-renders (a metronome tick, for instance) -- only a genuinely new
+    draw re-rolls it. `useSingleNotePractice` now exposes `historyIndex`
+    for exactly this purpose, having not needed to before.

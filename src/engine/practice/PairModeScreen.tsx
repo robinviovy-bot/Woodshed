@@ -10,11 +10,13 @@ import { TimeSignaturePicker } from "@/engine/metronome/TimeSignaturePicker";
 import { BpmStepper } from "@/engine/metronome/BpmStepper";
 import type { MetronomeSound } from "@/engine/metronome/types";
 import { useMetronome } from "@/engine/metronome/useMetronome";
+import type { AccidentalSpelling } from "@/engine/practice/notes";
 import { PairDisplay } from "@/engine/practice/PairDisplay";
 import { POOL_LABELS, pluralize, formatDuration } from "@/engine/practice/shared";
 import { SessionSummary } from "@/engine/practice/SessionSummary";
 import { usePairPractice } from "@/engine/practice/usePairPractice";
 import { usePracticeSession } from "@/engine/practice/usePracticeSession";
+import { useSpellingChoices } from "@/engine/practice/useSpellingChoices";
 import type { Exercise, Pool } from "@/types/database";
 
 type ScreenPhase = "setup" | "practicing" | "summary";
@@ -41,12 +43,17 @@ export function PairModeScreen({
 }) {
   const [screenPhase, setScreenPhase] = useState<ScreenPhase>(initialPool ? "practicing" : "setup");
   const [pool, setPool] = useState<Pool>(initialPool ?? exercise.default_pool);
+  const [accidentalSpelling, setAccidentalSpelling] = useState<AccidentalSpelling>("both");
   const [sessionStart, setSessionStart] = useState<number | null>(() => (initialPool ? Date.now() : null));
   const [sessionEnd, setSessionEnd] = useState<number | null>(null);
 
   const metronome = useMetronome(initialBpm ?? 40, metronomeSound);
   const practice = usePairPractice(pool);
   const session = usePracticeSession(exercise, pool);
+  const preferSharp = useSpellingChoices(accidentalSpelling, 2, practice.pairsCovered) as [
+    boolean,
+    boolean,
+  ];
 
   const stopMetronome = metronome.stop;
   useEffect(() => {
@@ -77,6 +84,8 @@ export function PairModeScreen({
         exercise={exercise}
         pool={pool}
         onPoolChange={setPool}
+        accidentalSpelling={accidentalSpelling}
+        onAccidentalSpellingChange={setAccidentalSpelling}
         onStart={() => {
           setSessionStart(Date.now());
           session.begin(metronome.bpm, metronome.timeSignature);
@@ -138,6 +147,7 @@ export function PairModeScreen({
               firstNote={practice.firstNote}
               secondNote={practice.secondNote}
               notation={notation}
+              preferSharp={preferSharp}
             />
             <Button variant="secondary" onClick={practice.drawNewPair}>
               Draw new pair

@@ -125,6 +125,11 @@ export function useSingleNotePractice(pool: Pool) {
   return {
     phase,
     currentPitchClass,
+    // Exposed so the screen can key its accidental-spelling choice
+    // (useSpellingChoices) on exactly which occurrence is on screen --
+    // stepping back to an earlier note should keep showing the same
+    // spelling it did the first time, not re-roll it.
+    historyIndex,
     canGoBack,
     queueLength: isFiniteQueue ? poolSize : null,
     queuePosition: isFiniteQueue ? queuePosition : null,

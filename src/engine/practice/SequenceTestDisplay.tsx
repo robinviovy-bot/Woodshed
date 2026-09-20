@@ -8,14 +8,19 @@ export function SequenceTestDisplay({
   sequence,
   noteIndex,
   notation,
+  preferSharp,
 }: {
   sequence: number[];
   noteIndex: number;
   notation: string;
+  preferSharp: boolean[];
 }) {
-  const current = getNoteDisplay(sequence[noteIndex], notation);
+  const current = getNoteDisplay(sequence[noteIndex], notation, preferSharp[noteIndex]);
   const nextIndex = noteIndex + 1;
-  const next = nextIndex < sequence.length ? getNoteDisplay(sequence[nextIndex], notation) : null;
+  const next =
+    nextIndex < sequence.length
+      ? getNoteDisplay(sequence[nextIndex], notation, preferSharp[nextIndex])
+      : null;
 
   return (
     <div className="flex items-center justify-center gap-6">

@@ -7,13 +7,15 @@ export function PairDisplay({
   firstNote,
   secondNote,
   notation,
+  preferSharp,
 }: {
   firstNote: number;
   secondNote: number;
   notation: string;
+  preferSharp: [boolean, boolean];
 }) {
-  const first = getNoteDisplay(firstNote, notation);
-  const second = getNoteDisplay(secondNote, notation);
+  const first = getNoteDisplay(firstNote, notation, preferSharp[0]);
+  const second = getNoteDisplay(secondNote, notation, preferSharp[1]);
 
   return (
     <div className="flex items-center gap-10">

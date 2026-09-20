@@ -11,6 +11,7 @@ import { BpmStepper } from "@/engine/metronome/BpmStepper";
 import type { MetronomeSound } from "@/engine/metronome/types";
 import { useMetronome } from "@/engine/metronome/useMetronome";
 import { DirectionArrow } from "@/engine/practice/DirectionArrow";
+import type { AccidentalSpelling } from "@/engine/practice/notes";
 import { getNoteDisplay } from "@/engine/practice/notes";
 import { SequenceDisplay } from "@/engine/practice/SequenceDisplay";
 import { SequenceTestDisplay } from "@/engine/practice/SequenceTestDisplay";
@@ -19,6 +20,7 @@ import { SessionSummary } from "@/engine/practice/SessionSummary";
 import { usePracticeSession } from "@/engine/practice/usePracticeSession";
 import { useSequencePractice } from "@/engine/practice/useSequencePractice";
 import { useSequenceTest } from "@/engine/practice/useSequenceTest";
+import { useSpellingChoices } from "@/engine/practice/useSpellingChoices";
 import type { Exercise, Pool } from "@/types/database";
 
 type ScreenPhase = "setup" | "practicing" | "summary";
@@ -51,6 +53,7 @@ export function SequenceModeScreen({
 }) {
   const [screenPhase, setScreenPhase] = useState<ScreenPhase>(initialPool ? "practicing" : "setup");
   const [pool, setPool] = useState<Pool>(initialPool ?? exercise.default_pool);
+  const [accidentalSpelling, setAccidentalSpelling] = useState<AccidentalSpelling>("both");
   const [sessionStart, setSessionStart] = useState<number | null>(() => (initialPool ? Date.now() : null));
   const [sessionEnd, setSessionEnd] = useState<number | null>(null);
 
@@ -58,6 +61,11 @@ export function SequenceModeScreen({
   const practice = useSequencePractice(pool, exercise.config.sequence_length ?? 7);
   const test = useSequenceTest(practice.sequence.length, metronome);
   const session = usePracticeSession(exercise, pool);
+  const preferSharp = useSpellingChoices(
+    accidentalSpelling,
+    practice.sequence.length,
+    practice.sequencesCovered,
+  );
 
   const stopMetronome = metronome.stop;
   useEffect(() => {
@@ -87,6 +95,8 @@ export function SequenceModeScreen({
         exercise={exercise}
         pool={pool}
         onPoolChange={setPool}
+        accidentalSpelling={accidentalSpelling}
+        onAccidentalSpellingChange={setAccidentalSpelling}
         onStart={() => {
           setSessionStart(Date.now());
           session.begin(metronome.bpm, metronome.timeSignature);
@@ -113,7 +123,7 @@ export function SequenceModeScreen({
   }
 
   // screenPhase === "practicing"
-  const firstNote = getNoteDisplay(practice.sequence[0], notation);
+  const firstNote = getNoteDisplay(practice.sequence[0], notation, preferSharp[0]);
   return (
     <div
       className="mx-auto flex min-h-screen max-w-[480px] flex-col justify-between gap-8 px-6 py-6"
@@ -149,7 +159,12 @@ export function SequenceModeScreen({
         )}
 
         {test.phase === "running" && (
-          <SequenceTestDisplay sequence={practice.sequence} noteIndex={test.noteIndex} notation={notation} />
+          <SequenceTestDisplay
+            sequence={practice.sequence}
+            noteIndex={test.noteIndex}
+            notation={notation}
+            preferSharp={preferSharp}
+          />
         )}
 
         {(test.phase === "countdown" || test.phase === "running") && (
@@ -160,7 +175,7 @@ export function SequenceModeScreen({
 
         {test.phase === "idle" && (
           <>
-            <SequenceDisplay sequence={practice.sequence} notation={notation} />
+            <SequenceDisplay sequence={practice.sequence} notation={notation} preferSharp={preferSharp} />
             <div className="flex flex-wrap justify-center gap-3">
               <Button variant="secondary" onClick={practice.drawNewSequence}>
                 Draw new sequence

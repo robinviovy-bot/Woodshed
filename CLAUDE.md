@@ -688,9 +688,9 @@ Tracks SPEC.md section 12. Update this after finishing each phase.
   exist despite what Phase 0's log said (that line was aspirational, not
   actually done back then) -- created fresh this session: New Project →
   Import the GitHub repo → Vercel auto-detected the Vite framework preset
-  correctly, no config file needed. Live at
-  https://woodshed-liard.vercel.app.
-  - **Two real gotchas hit during setup, worth remembering:** (1) Robin
+  correctly (build command and output directory needed no manual config).
+  Live at https://woodshed-liard.vercel.app.
+  - **Three real gotchas hit during setup, worth remembering:** (1) Robin
     had the right Supabase values saved under `NEXT_PUBLIC_SUPABASE_URL`/
     `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` names (Next.js convention) --
     this is a Vite project, so the Vercel environment variables must be
@@ -713,4 +713,15 @@ Tracks SPEC.md section 12. Update this after finishing each phase.
     user row in Authentication -> Users and signing up again afterward.
     Whenever the production domain changes (a custom domain, for
     instance), this Supabase setting needs updating again or the same
-    failure mode will recur.
+    failure mode will recur. (3) React Router's client-side routes
+    (`/home`, `/practice/:slug`, etc.) worked fine when navigated to via
+    in-app links, but requesting one of those paths directly -- exactly
+    what Safari's "Add to Home Screen" does, and what a page refresh or a
+    bookmark does too -- got a genuine 404 from Vercel, since nothing on
+    the server actually serves a file at `/home`; only the React app
+    running client-side knows that route exists. Fixed with a new
+    `vercel.json` at the repo root rewriting every path to `/index.html`
+    (Vercel still serves real static files -- JS/CSS bundles, images --
+    directly first; the rewrite only kicks in when no file matches, which
+    is exactly the SPA-routing case). Any static host for a client-routed
+    SPA needs this same fallback, not just Vercel.

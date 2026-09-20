@@ -128,7 +128,7 @@ function ProfileScreen({ user, profile }: { user: User; profile: ProfileRow }) {
 
     if (uploadError) {
       setAvatarUploading(false);
-      setAvatarError("Couldn't upload that photo — please try again.");
+      setAvatarError("Couldn't upload that photo. Please try again.");
       return;
     }
 

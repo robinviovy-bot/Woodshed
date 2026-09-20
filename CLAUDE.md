@@ -178,6 +178,9 @@ this repo or a Vercel env var exposed to the browser.
   9) — adding an exercise should mean inserting rows plus at most a new
   `mode` handler, never a rewrite.
 - Ask rather than silently deciding when a choice affects how the app feels.
+- No em dashes in any user-facing app copy (UI text, error messages, etc.).
+  Robin finds them an AI tell. Use a period or comma instead. This does not
+  apply to code comments or this file.
 - Flag ambiguity or contradictions in SPEC.md instead of guessing past them.
 
 ## 8. Build-order log

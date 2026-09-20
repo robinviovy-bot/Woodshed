@@ -34,7 +34,7 @@ export function Onboarding() {
 
     setSubmitting(false);
     if (updateError) {
-      setError("Couldn't save that — please try again.");
+      setError("Couldn't save that. Please try again.");
       return;
     }
     setStep("philosophy");
@@ -51,7 +51,7 @@ export function Onboarding() {
         <div className="flex flex-col gap-3">
           <h1 className="font-display text-3xl">Welcome, {firstName}</h1>
           <p className="text-ink-secondary">
-            Nothing here is ever finished — no levels to clear, no content to unlock. Woodshed
+            Nothing here is ever finished. No levels to clear, no content to unlock. Woodshed
             just notices what's gone quiet, so all you have to do is come back and play.
           </p>
         </div>

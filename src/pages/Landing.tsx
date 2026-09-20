@@ -10,7 +10,7 @@ export function Landing() {
         <h1 className="font-display text-4xl">Woodshed</h1>
         <p className="text-ink-secondary">
           A quiet place to keep your guitar practice honest. Work through drills for as long as
-          it takes — Woodshed just notices what's gone fresh and what's gone quiet, so all you
+          it takes. Woodshed just notices what's gone fresh and what's gone quiet, so all you
           have to do is come back and play.
         </p>
       </div>

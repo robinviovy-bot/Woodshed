@@ -16,13 +16,13 @@ export function describeAuthError(error: AuthError | null | undefined): string {
     return "Too many attempts. Please wait a moment and try again.";
   }
   if (message.includes("email not confirmed")) {
-    return "Please confirm your email before signing in — check your inbox for the confirmation link.";
+    return "Please confirm your email before signing in. Check your inbox for the confirmation link.";
   }
   if (message.includes("invalid login credentials")) {
     return "Incorrect email or password.";
   }
   if (message.includes("user already registered")) {
-    return "An account with this email already exists — try signing in instead.";
+    return "An account with this email already exists. Try signing in instead.";
   }
 
   return error.message || "Something went wrong. Please try again.";

@@ -226,7 +226,7 @@ export function Practice() {
           <BackButton onClick={handleEndSession} />
           <div className="flex items-center gap-2 text-sm text-ink-secondary">
             <PoolBadge pool={pool} />
-            {exercise.uses_metronome && (
+            {exercise.uses_metronome && !isRoundComplete && (
               <span className="font-mono font-numeric">{metronome.bpm} BPM</span>
             )}
           </div>
@@ -268,7 +268,7 @@ export function Practice() {
         )}
       </div>
 
-      {exercise.uses_metronome && (
+      {exercise.uses_metronome && !isRoundComplete && (
         <div className="flex flex-col items-center gap-4">
           <BeatIndicator beatsPerBar={metronome.beatsPerBar} currentBeat={metronome.currentBeat} />
           <PlayPauseButton isPlaying={metronome.isPlaying} onToggle={metronome.toggle} />

@@ -6,6 +6,7 @@ import { useAuth } from "@/auth/useAuth";
 import { Button } from "@/components/Button";
 import { ComingSoonBadge } from "@/components/ComingSoonBadge";
 import { Section } from "@/components/Section";
+import { SegmentedControl } from "@/components/SegmentedControl";
 import { TextField } from "@/components/TextField";
 import { supabase } from "@/lib/supabase";
 import type { Theme } from "@/theme/theme-context";
@@ -22,38 +23,6 @@ const NOTATION_OPTIONS: { value: Notation; label: string }[] = [
 ];
 const METRONOME_SOUND_OPTIONS = ["click", "beep"];
 const METRONOME_SOUND_LABELS: Record<string, string> = { click: "Click", beep: "Beep" };
-
-function SegmentedControl<T extends string>({
-  value,
-  options,
-  onChange,
-  labels,
-}: {
-  value: T;
-  options: T[];
-  onChange: (next: T) => void;
-  labels?: Partial<Record<T, string>>;
-}) {
-  return (
-    <div className="inline-flex gap-1 rounded-control border border-line p-1">
-      {options.map((option) => (
-        <button
-          key={option}
-          type="button"
-          onClick={() => onChange(option)}
-          className="min-h-11 flex-1 rounded-control px-4 text-sm transition-colors duration-150"
-          style={
-            value === option
-              ? { backgroundColor: "var(--color-accent)", color: "var(--color-background)" }
-              : { color: "var(--color-ink-secondary)" }
-          }
-        >
-          {labels?.[option] ?? option}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 // RequireAuth + RequireOnboarded (see the router) already wait for
 // useAuth()'s loading flag before this ever mounts, so by the time it does,

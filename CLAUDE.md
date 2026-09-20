@@ -69,12 +69,20 @@ src/
                   today; Home, ExercisePicker, Practice, Progress land in
                   later phases.
   components/     Small, reusable UI pieces used by more than one page
-                  (Button, TextField, AuthLayout, Section, FreshnessDot,
+                  (Button, TextField, AuthLayout, Section, SegmentedControl,
                   PoolBadge, ComingSoonBadge, LoadingScreen, ...).
   engine/         The generic practice engine (mode handlers for
                   'single' | 'pair' | 'sequence', metronome, session state).
                   Reads exercise config; never branches on a specific
                   exercise or program by name. See section 9 of SPEC.md.
+                  metronome/ (Phase 3): useMetronome is the lookahead
+                  scheduler (Web Audio, not setInterval, for timing
+                  stability); BeatIndicator, PlayPauseButton, BpmStepper,
+                  TapTempoButton are its UI pieces, kept separate rather than
+                  one bundled component since Phase 4's practice screen will
+                  interleave them with other controls, not drop in a single
+                  block. sound.ts synthesizes both "click" and "beep" with
+                  oscillators, nothing sample-based to load.
   theme/          ThemeProvider + useTheme + the shared context (split into
                   separate files so Fast Refresh / oxlint stay happy about
                   component-only exports), plus ThemeSync (adopts
@@ -141,9 +149,11 @@ Anything reused, or that other pages will plausibly need, goes in
   `text-accent`, `border-accent`).
 - `Pool`, `ExerciseMode`, `Confidence`, and `MilestoneCode` are string union
   types in `types/database.ts` — import from there, don't redeclare
-  (`components/PoolBadge.tsx` does this correctly). `Freshness` is computed
-  at read time and never stored (SPEC.md section 5), so it stays colocated
-  with `components/FreshnessDot.tsx` instead of living in `types/database.ts`.
+  (`components/PoolBadge.tsx` does this correctly). There is no `Freshness`
+  type anymore: freshness was reworked to a program-level hot/cold scale
+  (SPEC.md section 5) and `components/FreshnessDot.tsx` was deleted as dead
+  code in Phase 3 once its only caller (the retired `DesignPreview`) was
+  gone. The program-level temperature indicator gets built in Phase 7.
 
 ## 5. Commands (PowerShell)
 
@@ -275,8 +285,25 @@ Tracks SPEC.md section 12. Update this after finishing each phase.
   - Explicitly deprioritized per Robin: getting the practice loop usable
     matters more right now than refining a screen nobody has tried yet.
     Don't revisit this further until Phase 7.
-- [ ] Phase 3 — Metronome (lookahead scheduler, BPM stepper, tap tempo, time
-  signatures, beat indicator) as a standalone component
+- [x] **Phase 3 — Metronome**: `src/engine/metronome/` holds `useMetronome`
+  (Web Audio lookahead scheduler, schedules ~100ms ahead of
+  `audioContext.currentTime`, a 25ms `setInterval` only decides when to
+  schedule more, never triggers sound directly) plus its UI pieces
+  (`BeatIndicator`, `PlayPauseButton`, `BpmStepper`, `TapTempoButton`) and
+  `sound.ts` (oscillator-synthesized "click"/"beep", resolving the Phase 2
+  flag about what those options mean). `SegmentedControl` extracted from
+  `Profile.tsx` into `components/` since the time signature picker needed
+  the same pattern (now supports a `wrap` mode for more than a couple of
+  options). Verified via a temporary `/dev/metronome` route
+  (`MetronomeTest.tsx`, delete both once Phase 4 embeds the real thing):
+  play/pause, all 6 time signatures (beat indicator dot count updates
+  correctly), BPM stepper and tap tempo both apply live without
+  interrupting playback, sound switching same. Also deleted
+  `FreshnessDot.tsx` as dead code (see section 4 above).
+  - Not built yet, deliberately: Wake Lock. SPEC.md ties it to "while a
+    session is open," and there's no session concept until Phase 4. Add it
+    there, not here.
+- [ ] Phase 4 — Practice screen around the metronome, exercise 2 first
 - [ ] Phase 4 — Practice screen around the metronome, exercise 2 first
 - [ ] Phase 5 — Remaining exercise modes (1, 3, 4) on the same engine
 - [ ] Phase 6 — Session persistence, drill_stats, streak and XP logic

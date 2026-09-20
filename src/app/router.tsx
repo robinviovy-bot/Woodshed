@@ -4,6 +4,7 @@ import { RequireGuest } from "@/auth/RequireGuest";
 import { RequireOnboarded } from "@/auth/RequireOnboarded";
 import { ForgotPassword } from "@/pages/ForgotPassword";
 import { Landing } from "@/pages/Landing";
+import { MetronomeTest } from "@/pages/MetronomeTest";
 import { Onboarding } from "@/pages/Onboarding";
 import { Profile } from "@/pages/Profile";
 import { ResetPassword } from "@/pages/ResetPassword";
@@ -65,6 +66,15 @@ export const router = createBrowserRouter([
         <RequireOnboarded>
           <Profile />
         </RequireOnboarded>
+      </RequireAuth>
+    ),
+  },
+  {
+    // Phase 3 scratch route, see MetronomeTest.tsx's header comment.
+    path: "/dev/metronome",
+    element: (
+      <RequireAuth>
+        <MetronomeTest />
       </RequireAuth>
     ),
   },

@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens from SPEC.md section 10. Names here diverge slightly from
+ * the spec's palette labels (e.g. "border" -> --color-line, "text primary"
+ * -> --color-ink) so the Tailwind utilities @theme generates read cleanly
+ * (border-line, text-ink) instead of stuttering (border-border, text-text-
+ * primary). The mapping back to SPEC.md wording is listed next to each line.
+ *
+ * Dark is the default palette (defined directly in @theme). The light
+ * palette overrides the same custom properties under [data-theme="light"],
+ * and "auto" follows the OS setting via prefers-color-scheme. Because these
+ * are plain CSS custom properties, every Tailwind utility generated from
+ * @theme keeps working after the override -- only the variable value
+ * changes.
+ */
+@theme {
+  --color-background: #14120f; /* background */
+  --color-surface: #1c1914; /* surface */
+  --color-elevated: #221e19; /* elevated */
+  --color-line: #332e27; /* border */
+  --color-ink: #f5f1ea; /* text primary */
+  --color-ink-secondary: #a39b8e; /* text secondary */
+  --color-ink-muted: #7c746a; /* text muted */
+  --color-accent: #f0a93b; /* accent */
+  --color-accent-tint: #3a2b12; /* not specified for dark; derived to pair with accent */
+  --color-success: #6faf96; /* success */
+  --color-success-tint: #1e3229; /* success bg */
+  --color-neutral-fill: #332e27; /* not specified for dark; reuses border */
+
+  --font-display: "Instrument Serif", serif;
+  --font-ui: "Instrument Sans", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --radius-card: 12px;
+  --radius-control: 8px;
+}
+
+[data-theme="light"] {
+  --color-background: #faf7f2;
+  --color-surface: #ffffff;
+  --color-elevated: #ffffff;
+  --color-line: #e8e1d6;
+  --color-ink: #1a1815;
+  --color-ink-secondary: #6b6459;
+  --color-ink-muted: #8a8073;
+  --color-accent: #c77a14;
+  --color-accent-tint: #fbe9cc;
+  --color-success: #2f6b55;
+  --color-success-tint: #ddede5;
+  --color-neutral-fill: #efe9de;
+}
+
+@media (prefers-color-scheme: light) {
+  [data-theme="auto"] {
+    --color-background: #faf7f2;
+    --color-surface: #ffffff;
+    --color-elevated: #ffffff;
+    --color-line: #e8e1d6;
+    --color-ink: #1a1815;
+    --color-ink-secondary: #6b6459;
+    --color-ink-muted: #8a8073;
+    --color-accent: #c77a14;
+    --color-accent-tint: #fbe9cc;
+    --color-success: #2f6b55;
+    --color-success-tint: #ddede5;
+    --color-neutral-fill: #efe9de;
+  }
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-ink);
+  font-family: var(--font-ui);
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.font-numeric {
+  font-variant-numeric: tabular-nums;
+}

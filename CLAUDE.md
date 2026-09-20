@@ -73,6 +73,9 @@ src/
   components/     Small, reusable UI pieces used by more than one page
                   (Button, TextField, AuthLayout, Section, SegmentedControl,
                   PoolBadge, ComingSoonBadge, LoadingScreen, ...).
+                  MetronomeIcon and FreshnessIcon (Phase 6) are hand-drawn
+                  SVGs rather than an icon library dependency, both keyed
+                  to `currentColor`/CSS variables so they follow the theme.
   engine/         The generic practice engine (mode handlers for
                   'single' | 'pair' | 'sequence', metronome, session state).
                   Reads exercise config; never branches on a specific
@@ -108,7 +111,17 @@ src/
                   CSS tokens in styles/index.css key off of.
   lib/            Thin wrappers around external services: supabase.ts,
                   authErrors.ts (maps Supabase auth errors to the copy
-                  SPEC.md section 7 asks for).
+                  SPEC.md section 7 asks for). Phase 6 added dates.ts
+                  (getLocalDay/daysBetween/shiftDay, the calendar-day math
+                  shared by both of the below), sessions.ts (the write
+                  path -- startSession/endSession, SPEC.md section 6's
+                  streak-with-one-rest-day algorithm and XP formula), and
+                  freshness.ts (the read path -- computeFreshness, SPEC.md
+                  section 5's Cold/Cool/Cooling down/Warming up/Hot table).
+                  Not lib code but tied to it: engine/practice/
+                  usePracticeSession.ts is what the three mode screens
+                  actually call (begin() on Start, finish() on End
+                  session), so persistence isn't reimplemented per mode.
   styles/         index.css: Tailwind import + CSS custom property tokens
                   for both themes.
   types/          Shared TypeScript types. database.ts holds row shapes for
@@ -159,6 +172,11 @@ Anything reused, or that other pages will plausibly need, goes in
   form errors and the account-deletion confirmation, so error text doesn't
   have to repurpose `--color-accent`, which section 10 reserves for
   "here, now"). Flagged for Robin alongside the Phase 0 palette gaps.
+  `--color-flame` fills in section 10's "flame tone (new, not chosen yet)"
+  (added in Phase 6 once the freshness icon needed an actual color):
+  deliberately redder/warmer than `--color-accent` so program temperature
+  and "here, now" stay visually distinct per section 10's color semantics
+  table.
 - Tailwind v4 has no `tailwind.config.js`; theme values are declared in the
   `@theme` block of `src/styles/index.css` and Tailwind derives utilities
   from them automatically (e.g. `--color-accent` → `bg-accent`,
@@ -520,7 +538,75 @@ Tracks SPEC.md section 12. Update this after finishing each phase.
   case, small feet, a base line, tick marks on the central shaft, a
   pendulum arm leaning right ending in a circular weight), `currentColor`
   + `var(--color-ink)` so it follows the theme like every other icon here.
-- [ ] Phase 6 — Session persistence, drill_stats, streak and XP logic
+- **Home header finished, per Robin:** the "Profile" text link is now the
+  user's own photo (or a first-initial fallback, same pattern as
+  Profile.tsx's own photo circle) in a small `h-10 w-10` circle, still
+  linking to `/profile`. `MetronomeIcon` grew to `size={56}` and centered
+  on its own row (Robin's call: the other tools it'll eventually sit
+  alongside aren't built yet, so there's nothing to center it against).
+  Next to the avatar: `components/FreshnessIcon.tsx` (flame or, at Cold, a
+  snowflake -- SPEC.md section 5) plus the numeric streak, both reading
+  `user_stats` -- this is what actually pulled Phase 6 forward, since
+  neither means anything without real session data behind it. See the
+  Phase 6 entry directly below for the persistence work this required,
+  and its "per-program freshness" note for why the same freshness read
+  also appears on the Fretboard 101 lesson card.
+- [x] **Phase 6 — Session persistence, drill_stats, streak and XP logic**
+  (pulled forward out of order, per Robin, once it became clear the
+  streak/freshness UI they wanted on Home couldn't mean anything without
+  it -- see the Home entry below for how those two requests turned into
+  this phase happening now instead of after Phase 7). `lib/sessions.ts`
+  is the write path: `startSession()` runs on "Start" (SPEC.md section 6:
+  "a day counts as practiced as soon as the user starts a session"),
+  creates the `sessions` row, and -- only on the first session of the
+  local day -- runs the streak-with-one-rest-day algorithm and the XP
+  formula verbatim from section 6, upserting `user_stats`, `xp_events`,
+  and `daily_activity`. `endSession()` runs on "End session", closing the
+  `sessions` row and folding totals into `drill_stats`. Both are called
+  through `engine/practice/usePracticeSession.ts` from all three mode
+  screens identically, so persistence didn't need reimplementing per mode
+  (SPEC.md section 9). Neither is awaited by its caller: `begin()` fires
+  when the drill opens and its result (XP awarded, new streak) populates
+  well before the summary screen can render; `finish()` is fire-and-forget
+  since a failed background write shouldn't block leaving the screen,
+  matching the "trust the user, don't verify" stance already used for
+  reps and (until last session) confidence. Verified end-to-end in the
+  browser: completing a drill shows "+100 XP" and "1 day streak" in the
+  summary, a second drill the same day shows the streak with no XP line
+  (day already validated), and Home's streak badge and lesson card update
+  to match immediately after.
+  - **Scope cut, deliberately:** milestones (`milestones` table, full
+    screen congratulation cards) are Phase 8's job specifically and are
+    not touched here -- writing rows nothing ever displays would be dead
+    functionality. Same for the level/XP bar, 8 week heatmap, and "due for
+    review" block SPEC.md's Home section describes: `user_stats.level` is
+    computed and stored correctly (the formula's cheap and the column
+    already exists) but nothing surfaces it yet.
+  - **Two approximations, both flagged in code comments:** (1) a
+    "session" is schema-tied to a specific seeded `drill_id` (exercise +
+    pool + one BPM-ladder rung), but the practice screens let BPM drift
+    freely rather than pinning it to a rung -- `resolveDrillId()` in
+    lib/sessions.ts picks the nearest ladder rung to whatever BPM the
+    metronome actually was at, while `sessions.actual_bpm` keeps the real
+    value regardless. Exact today since every mode screen starts at the
+    ladder's own 40 BPM. (2) `lib/freshness.ts`'s read-time state at
+    exactly a 2-day gap (one full missed day) always shows as still-warm-
+    but-paused rather than re-checking whether that grace day was already
+    spent in the trailing week -- SPEC.md section 5's "the state holds
+    where it was" language covers the common case; the rare edge case
+    (a second missed day arriving right after an already-used grace day)
+    resolves for real the moment the next session actually starts and
+    lib/sessions.ts re-runs the algorithm properly.
+  - **Per-program freshness, resolved for now by not solving it yet:**
+    both the Home streak badge and the Fretboard 101 lesson card's
+    freshness icon read the same `user_stats` row (current_streak,
+    last_practiced_day) rather than a per-program `daily_activity` query.
+    Exact while there's only one program (SPEC.md section 5 asks for
+    program-level freshness, and "any practice at all" already equals
+    "any practice in this program" when it's the only one). This is
+    exactly the gap flagged back in the freshness design session: revisit
+    with a real per-program query, and per-program `is_rest_day`
+    semantics, once a second program exists.
 - [ ] Phase 7 — Home, exercise picker, progress heatmap
 - [ ] Phase 8 — Milestone cards, tempo suggestion prompt
 - [ ] Phase 9 — PWA manifest, service worker, icons

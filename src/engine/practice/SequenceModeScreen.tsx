@@ -16,6 +16,7 @@ import { SequenceDisplay } from "@/engine/practice/SequenceDisplay";
 import { SequenceTestDisplay } from "@/engine/practice/SequenceTestDisplay";
 import { pluralize, formatDuration } from "@/engine/practice/shared";
 import { SessionSummary } from "@/engine/practice/SessionSummary";
+import { usePracticeSession } from "@/engine/practice/usePracticeSession";
 import { useSequencePractice } from "@/engine/practice/useSequencePractice";
 import { useSequenceTest } from "@/engine/practice/useSequenceTest";
 import type { Exercise, Pool } from "@/types/database";
@@ -52,6 +53,7 @@ export function SequenceModeScreen({
   const metronome = useMetronome(40, metronomeSound);
   const practice = useSequencePractice(pool, exercise.config.sequence_length ?? 7);
   const test = useSequenceTest(practice.sequence.length, metronome);
+  const session = usePracticeSession(exercise, pool);
 
   const stopMetronome = metronome.stop;
   useEffect(() => {
@@ -60,6 +62,7 @@ export function SequenceModeScreen({
 
   function handleEndSession() {
     setSessionEnd(Date.now());
+    session.finish(practice.sequencesCovered * practice.sequence.length, 0);
     setScreenPhase("summary");
   }
 
@@ -71,6 +74,7 @@ export function SequenceModeScreen({
         onPoolChange={setPool}
         onStart={() => {
           setSessionStart(Date.now());
+          session.begin(metronome.bpm, metronome.timeSignature);
           setScreenPhase("practicing");
         }}
       />
@@ -85,6 +89,8 @@ export function SequenceModeScreen({
         stats={[
           `${pluralize(practice.sequencesCovered, "sequence")} covered`,
           formatDuration(sessionSeconds),
+          ...(session.result?.isFirstSessionOfDay ? [`+${session.result.xpAwarded} XP`] : []),
+          ...(session.result ? [`${pluralize(session.result.currentStreak, "day")} streak`] : []),
         ]}
         onDone={onExit}
       />

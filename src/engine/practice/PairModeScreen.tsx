@@ -14,6 +14,7 @@ import { PairDisplay } from "@/engine/practice/PairDisplay";
 import { POOL_LABELS, pluralize, formatDuration } from "@/engine/practice/shared";
 import { SessionSummary } from "@/engine/practice/SessionSummary";
 import { usePairPractice } from "@/engine/practice/usePairPractice";
+import { usePracticeSession } from "@/engine/practice/usePracticeSession";
 import type { Exercise, Pool } from "@/types/database";
 
 type ScreenPhase = "setup" | "practicing" | "summary";
@@ -41,6 +42,7 @@ export function PairModeScreen({
 
   const metronome = useMetronome(40, metronomeSound);
   const practice = usePairPractice(pool);
+  const session = usePracticeSession(exercise, pool);
 
   const stopMetronome = metronome.stop;
   useEffect(() => {
@@ -50,6 +52,7 @@ export function PairModeScreen({
 
   function handleEndSession() {
     setSessionEnd(Date.now());
+    session.finish(practice.pairsCovered * 2, 0);
     setScreenPhase("summary");
   }
 
@@ -61,6 +64,7 @@ export function PairModeScreen({
         onPoolChange={setPool}
         onStart={() => {
           setSessionStart(Date.now());
+          session.begin(metronome.bpm, metronome.timeSignature);
           setScreenPhase("practicing");
         }}
       />
@@ -72,7 +76,12 @@ export function PairModeScreen({
       sessionStart && sessionEnd ? Math.round((sessionEnd - sessionStart) / 1000) : 0;
     return (
       <SessionSummary
-        stats={[`${pluralize(practice.pairsCovered, "pair")} covered`, formatDuration(sessionSeconds)]}
+        stats={[
+          `${pluralize(practice.pairsCovered, "pair")} covered`,
+          formatDuration(sessionSeconds),
+          ...(session.result?.isFirstSessionOfDay ? [`+${session.result.xpAwarded} XP`] : []),
+          ...(session.result ? [`${pluralize(session.result.currentStreak, "day")} streak`] : []),
+        ]}
         onDone={onExit}
       />
     );

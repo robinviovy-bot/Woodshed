@@ -13,13 +13,13 @@ import { useMetronome } from "@/engine/metronome/useMetronome";
 import { NoteNavigator } from "@/engine/practice/NoteNavigator";
 import { POOL_LABELS, pluralize, formatDuration } from "@/engine/practice/shared";
 import { SessionSummary } from "@/engine/practice/SessionSummary";
+import { usePracticeSession } from "@/engine/practice/usePracticeSession";
 import { useSingleNotePractice } from "@/engine/practice/useSingleNotePractice";
 import type { Exercise, Pool } from "@/types/database";
 
 type ScreenPhase = "setup" | "practicing" | "summary";
 
-// Mode: 'single' (exercises 1 and 2). No session persistence yet -- Phase
-// 6's job. Everything here is in-memory only, discarded on "Done".
+// Mode: 'single' (exercises 1 and 2).
 export function SingleModeScreen({
   exercise,
   notation,
@@ -38,6 +38,7 @@ export function SingleModeScreen({
 
   const metronome = useMetronome(40, metronomeSound);
   const practice = useSingleNotePractice(pool);
+  const session = usePracticeSession(exercise, pool);
 
   // The metronome only ever runs while a drill is actively open (SPEC.md's
   // practice-screen section): reaching lap-finished or the summary both
@@ -50,6 +51,10 @@ export function SingleModeScreen({
 
   function handleEndSession() {
     setSessionEnd(Date.now());
+    // Reps aren't tallied (see useSingleNotePractice's header comment) --
+    // derived instead by trusting the "play it N times" instruction was
+    // followed.
+    session.finish(practice.notesCovered, practice.notesCovered * exercise.config.reps_target);
     setScreenPhase("summary");
   }
 
@@ -61,6 +66,7 @@ export function SingleModeScreen({
         onPoolChange={setPool}
         onStart={() => {
           setSessionStart(Date.now());
+          session.begin(exercise.uses_metronome ? metronome.bpm : null, metronome.timeSignature);
           setScreenPhase("practicing");
         }}
       />
@@ -70,9 +76,6 @@ export function SingleModeScreen({
   if (screenPhase === "summary") {
     const sessionSeconds =
       sessionStart && sessionEnd ? Math.round((sessionEnd - sessionStart) / 1000) : 0;
-    // Reps aren't tallied (see useSingleNotePractice's header comment) --
-    // derived instead by trusting the "play it N times" instruction was
-    // followed.
     const repsLogged = practice.notesCovered * exercise.config.reps_target;
     return (
       <SessionSummary
@@ -80,6 +83,8 @@ export function SingleModeScreen({
           `${pluralize(practice.notesCovered, "note")} covered`,
           `${pluralize(repsLogged, "rep")} logged`,
           formatDuration(sessionSeconds),
+          ...(session.result?.isFirstSessionOfDay ? [`+${session.result.xpAwarded} XP`] : []),
+          ...(session.result ? [`${pluralize(session.result.currentStreak, "day")} streak`] : []),
         ]}
         onDone={onExit}
       />

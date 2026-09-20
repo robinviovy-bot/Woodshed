@@ -28,6 +28,7 @@
   --color-success-tint: #1e3229; /* success bg */
   --color-neutral-fill: #332e27; /* not specified for dark; reuses border */
   --color-danger: #c1584b; /* not in SPEC.md's palette at all; needed for form errors (SPEC.md section 7) without repurposing accent, which section 10 reserves for "here, now" */
+  --color-flame: #e2622f; /* SPEC.md section 10's "flame tone (new, not chosen yet)" -- program temperature only, deliberately warmer/redder than accent so the two meanings (amber = here/now, flame = freshness) stay visually distinct */
 
   --font-display: "Instrument Serif", serif;
   --font-ui: "Instrument Sans", sans-serif;
@@ -51,6 +52,7 @@
   --color-success-tint: #ddede5;
   --color-neutral-fill: #efe9de;
   --color-danger: #9a3f2e;
+  --color-flame: #c94f22;
 }
 
 @media (prefers-color-scheme: light) {
@@ -68,6 +70,7 @@
     --color-success-tint: #ddede5;
     --color-neutral-fill: #efe9de;
     --color-danger: #9a3f2e;
+    --color-flame: #c94f22;
   }
 }
 

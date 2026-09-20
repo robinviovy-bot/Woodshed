@@ -3,12 +3,12 @@
 // scale as tick marks on the central shaft, and the pendulum arm leaning
 // right with its weight). Uses currentColor so it follows --color-ink and
 // adapts automatically between light and dark themes.
-export function MetronomeIcon({ className }: { className?: string }) {
+export function MetronomeIcon({ size = 28, className }: { size?: number; className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"
-      width="28"
-      height="28"
+      width={size}
+      height={size}
       fill="none"
       stroke="currentColor"
       strokeWidth="1.5"

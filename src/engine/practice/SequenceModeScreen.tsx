@@ -11,6 +11,8 @@ import { TimeSignaturePicker } from "@/engine/metronome/TimeSignaturePicker";
 import { BpmStepper } from "@/engine/metronome/BpmStepper";
 import type { MetronomeSound } from "@/engine/metronome/types";
 import { useMetronome } from "@/engine/metronome/useMetronome";
+import { DirectionArrow } from "@/engine/practice/DirectionArrow";
+import { getNoteDisplay } from "@/engine/practice/notes";
 import { SequenceDisplay } from "@/engine/practice/SequenceDisplay";
 import { SequenceTestDisplay } from "@/engine/practice/SequenceTestDisplay";
 import { pluralize, formatDuration } from "@/engine/practice/shared";
@@ -104,6 +106,7 @@ export function SequenceModeScreen({
   }
 
   // screenPhase === "practicing"
+  const firstNote = getNoteDisplay(practice.sequence[0], notation);
   return (
     <div
       className="mx-auto flex min-h-screen max-w-[480px] flex-col justify-between gap-8 px-6 py-6"
@@ -119,9 +122,16 @@ export function SequenceModeScreen({
 
       <div className="flex flex-1 flex-col items-center justify-center gap-8 px-2">
         {test.phase === "countdown" && (
-          <div className="flex flex-col items-center gap-2 text-center">
-            <p className="font-display text-8xl leading-none">{test.countdownBeatsLeft}</p>
-            <p className="text-sm text-ink-secondary">Get ready</p>
+          <div className="flex items-center justify-center gap-6">
+            <div className="flex flex-col items-center gap-2 text-center">
+              <p className="font-display text-8xl leading-none">{test.countdownBeatsLeft}</p>
+              <p className="text-sm text-ink-secondary">Get ready</p>
+            </div>
+            <div className="flex flex-col items-center gap-1 opacity-50">
+              <DirectionArrow direction="up" />
+              <span className="font-display text-2xl leading-none">{firstNote.primary}</span>
+              <span className="text-xs text-ink-muted">{firstNote.secondary}</span>
+            </div>
           </div>
         )}
 

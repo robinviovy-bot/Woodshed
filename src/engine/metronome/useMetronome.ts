@@ -110,6 +110,14 @@ export function useMetronome(initialBpm = 80, initialSound: MetronomeSound = "cl
     notesInQueueRef.current = [];
     setIsPlaying(false);
     setCurrentBeat(-1);
+    // Also reset here, not just in start(): tickCount means "beats since
+    // the current play began," which is 0 whenever nothing is playing.
+    // Leaving a stale nonzero value here was the bug behind
+    // useSequenceTest's countdown showing something like "10" instead of
+    // "3" -- its baseline was read before this start()'s own reset had
+    // landed.
+    tickCountRef.current = 0;
+    setTickCount(0);
   }, []);
 
   const start = useCallback(() => {
@@ -147,6 +155,14 @@ export function useMetronome(initialBpm = 80, initialSound: MetronomeSound = "cl
   const setTimeSignature = useCallback((next: TimeSignature) => {
     setTimeSignatureState(next);
     nextBeatRef.current = nextBeatRef.current % BEATS_PER_BAR[next];
+  }, []);
+
+  // Overrides the bar position of the next scheduled beat without touching
+  // its timing, so a caller can line up which future beat lands on the
+  // accented downbeat (beat 0) -- used by useSequenceTest so the test run's
+  // first note starts exactly on "the 1," regardless of time signature.
+  const setUpcomingBeat = useCallback((beat: number) => {
+    nextBeatRef.current = beat;
   }, []);
 
   // Tap tempo: average the gaps between the last few taps. A pause of more
@@ -190,6 +206,7 @@ export function useMetronome(initialBpm = 80, initialSound: MetronomeSound = "cl
     stop,
     setBpm,
     setTimeSignature,
+    setUpcomingBeat,
     setSound,
     tapTempo,
   };

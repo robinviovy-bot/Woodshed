@@ -13,7 +13,9 @@ const BEATS_PER_NOTE = 6;
 // six beats each, ending automatically after the last note. Counts against
 // metronome.tickCount (raw beats since play started, not currentBeat,
 // which wraps every bar and would tie the six-beats-per-note count to
-// whatever time signature happens to be selected).
+// whatever time signature happens to be selected). start() also realigns
+// the metronome's upcoming beat so the one that starts note 1 lands on the
+// accented downbeat, "the 1," instead of wherever it happens to fall.
 export function useSequenceTest(sequenceLength: number, metronome: ReturnType<typeof useMetronome>) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [countdownBeatsLeft, setCountdownBeatsLeft] = useState(COUNTDOWN_BEATS);
@@ -22,7 +24,8 @@ export function useSequenceTest(sequenceLength: number, metronome: ReturnType<ty
   const baselineTickRef = useRef(0);
   const runBaselineRef = useRef(0);
 
-  const { tickCount, isPlaying, start: startMetronome, stop: stopMetronome } = metronome;
+  const { tickCount, isPlaying, beatsPerBar, start: startMetronome, stop: stopMetronome, setUpcomingBeat } =
+    metronome;
 
   useEffect(() => {
     if (phase === "idle") return;
@@ -51,10 +54,24 @@ export function useSequenceTest(sequenceLength: number, metronome: ReturnType<ty
   }, [tickCount, phase, sequenceLength, noteIndex, stopMetronome]);
 
   function start() {
-    baselineTickRef.current = tickCount;
+    // Read isPlaying BEFORE calling startMetronome(), which resets
+    // tickCount to 0 -- if we're the ones starting it, the baseline is 0
+    // by definition, not whatever tickCount happened to hold a moment ago
+    // (that stale-read race was the bug behind the countdown showing
+    // something like "10" instead of "3").
+    const willStartFresh = !isPlaying;
+    baselineTickRef.current = willStartFresh ? 0 : tickCount;
     setCountdownBeatsLeft(COUNTDOWN_BEATS);
     setPhase("countdown");
-    if (!isPlaying) startMetronome();
+    if (willStartFresh) startMetronome();
+
+    // Line up so the beat that starts note 1 (the COUNTDOWN_BEATS-th beat
+    // from now) is the accented downbeat -- "the 1" -- regardless of the
+    // selected time signature's beats-per-bar. Must run after
+    // startMetronome(), which would otherwise overwrite this with its own
+    // reset to beat 0.
+    const target = (((beatsPerBar - (COUNTDOWN_BEATS - 1)) % beatsPerBar) + beatsPerBar) % beatsPerBar;
+    setUpcomingBeat(target);
   }
 
   function cancel() {

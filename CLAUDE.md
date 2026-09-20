@@ -459,6 +459,23 @@ Tracks SPEC.md section 12. Update this after finishing each phase.
     selected. `useMetronome` also now exports `start` directly (previously
     only reachable via `toggle`) since the test needs to start playback
     without also being able to stop it from the same call.
+  - **Two bugs and a request found once Robin tried the test, fixed same
+    session:** (1) `useMetronome.stop()` wasn't resetting `tickCount`, only
+    `start()` was -- if the metronome had been played and paused before
+    pressing "Start test," the countdown's baseline read that stale nonzero
+    value, showing a number like "10" instead of "3" until real elapsed
+    beats caught back up to it. Fixed by resetting `tickCount` in `stop()`
+    too, and by having `useSequenceTest.start()` use 0 directly as the
+    baseline whenever it's the one starting the metronome, rather than
+    trusting a `tickCount` read that could still be stale from the same
+    render. (2) The beat that started the first note could land anywhere
+    in the bar, not on the accented downbeat -- added
+    `useMetronome.setUpcomingBeat()` (overrides the bar position of the
+    next scheduled beat without touching its timing) and had
+    `useSequenceTest.start()` call it so the countdown always lands note 1
+    exactly on "the 1," regardless of time signature. (3) The countdown
+    now also previews the first note small alongside the countdown number,
+    matching the current/next layout used once the run is underway.
 - [ ] Phase 6 — Session persistence, drill_stats, streak and XP logic
 - [ ] Phase 7 — Home, exercise picker, progress heatmap
 - [ ] Phase 8 — Milestone cards, tempo suggestion prompt

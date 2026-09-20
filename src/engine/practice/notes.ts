@@ -1,0 +1,89 @@
+import type { Pool } from "@/types/database";
+
+// Pitch classes 0-11 (C=0, chromatic upward). SPEC.md section 3 defines
+// naturals as the 7 natural notes and accidentals as the 5 remaining ones,
+// each always shown with both enharmonic spellings.
+interface NaturalNote {
+  pitchClass: number;
+  en: string;
+  fr: string;
+}
+
+interface AccidentalNote {
+  pitchClass: number;
+  enSharp: string;
+  enFlat: string;
+  frSharp: string;
+  frFlat: string;
+}
+
+const NATURALS: NaturalNote[] = [
+  { pitchClass: 0, en: "C", fr: "do" },
+  { pitchClass: 2, en: "D", fr: "ré" },
+  { pitchClass: 4, en: "E", fr: "mi" },
+  { pitchClass: 5, en: "F", fr: "fa" },
+  { pitchClass: 7, en: "G", fr: "sol" },
+  { pitchClass: 9, en: "A", fr: "la" },
+  { pitchClass: 11, en: "B", fr: "si" },
+];
+
+const ACCIDENTALS: AccidentalNote[] = [
+  { pitchClass: 1, enSharp: "C#", enFlat: "Db", frSharp: "do#", frFlat: "réb" },
+  { pitchClass: 3, enSharp: "D#", enFlat: "Eb", frSharp: "ré#", frFlat: "mib" },
+  { pitchClass: 6, enSharp: "F#", enFlat: "Gb", frSharp: "fa#", frFlat: "solb" },
+  { pitchClass: 8, enSharp: "G#", enFlat: "Ab", frSharp: "sol#", frFlat: "lab" },
+  { pitchClass: 10, enSharp: "A#", enFlat: "Bb", frSharp: "la#", frFlat: "sib" },
+];
+
+export const NATURAL_PITCH_CLASSES = NATURALS.map((n) => n.pitchClass);
+export const ACCIDENTAL_PITCH_CLASSES = ACCIDENTALS.map((n) => n.pitchClass);
+export const ALL_PITCH_CLASSES = [...NATURAL_PITCH_CLASSES, ...ACCIDENTAL_PITCH_CLASSES].sort(
+  (a, b) => a - b,
+);
+
+export function getPitchClassesForPool(pool: Pool): number[] {
+  switch (pool) {
+    case "naturals":
+      return NATURAL_PITCH_CLASSES;
+    case "accidentals":
+      return ACCIDENTAL_PITCH_CLASSES;
+    case "chromatic":
+    case "complete":
+      return ALL_PITCH_CLASSES;
+  }
+}
+
+export interface NoteDisplay {
+  primary: string;
+  secondary: string;
+}
+
+// "primary" is whatever notation the profile prefers, "secondary" the
+// other one underneath in muted text, per SPEC.md section 7's practice
+// screen ("a big 'C' with 'do' underneath"). For an accidental, both lines
+// show the dual enharmonic spelling (section 3), just in different
+// notations.
+export function getNoteDisplay(pitchClass: number, notation: string): NoteDisplay {
+  const natural = NATURALS.find((n) => n.pitchClass === pitchClass);
+  if (natural) {
+    return notation === "fr"
+      ? { primary: natural.fr, secondary: natural.en }
+      : { primary: natural.en, secondary: natural.fr };
+  }
+
+  const accidental = ACCIDENTALS.find((a) => a.pitchClass === pitchClass);
+  if (!accidental) throw new Error(`Unknown pitch class: ${pitchClass}`);
+
+  const en = `${accidental.enSharp} / ${accidental.enFlat}`;
+  const fr = `${accidental.frSharp} / ${accidental.frFlat}`;
+  return notation === "fr" ? { primary: fr, secondary: en } : { primary: en, secondary: fr };
+}
+
+export function shuffle<T>(items: T[]): T[] {
+  const result = [...items];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}

@@ -6,13 +6,13 @@ import { Section } from "@/components/Section";
 import { supabase } from "@/lib/supabase";
 import type { Exercise, Program } from "@/types/database";
 
-type ExerciseSummary = Pick<Exercise, "id" | "title" | "position">;
+type ExerciseSummary = Pick<Exercise, "id" | "slug" | "title" | "position">;
 type ProgramWithExercises = Program & { exercises: ExerciseSummary[] };
 
-// The exercises listed here don't go anywhere yet -- Phase 4 builds the
-// first real practice screen (exercise 2), Phase 5 the rest. Until then
-// every row shows "Coming soon" rather than a dead or fake link, per
-// Robin's call when this page was built.
+// Only single-note-metronome (exercise 2) has a real practice screen so
+// far (Phase 4). The rest stay "Coming soon" until Phase 5 builds their
+// mode handlers -- no dead or fake links, per Robin's call on Home's setup.
+const PRACTICE_READY_SLUGS = new Set(["single-note-metronome"]);
 export function Home() {
   const [program, setProgram] = useState<ProgramWithExercises | null>(null);
   const [loading, setLoading] = useState(true);
@@ -23,7 +23,7 @@ export function Home() {
     async function loadProgram() {
       const { data } = await supabase
         .from("programs")
-        .select("*, exercises(id, title, position)")
+        .select("*, exercises(id, slug, title, position)")
         .eq("slug", "fretboard-101")
         .single();
 
@@ -63,15 +63,26 @@ export function Home() {
           <p className="text-sm text-ink-muted">Loading…</p>
         ) : (
           <div className="flex flex-col gap-2">
-            {program?.exercises.map((exercise) => (
-              <div
-                key={exercise.id}
-                className="flex items-center justify-between rounded-card border border-line p-4"
-              >
-                <span className="text-sm">{exercise.title}</span>
-                <ComingSoonBadge />
-              </div>
-            ))}
+            {program?.exercises.map((exercise) =>
+              PRACTICE_READY_SLUGS.has(exercise.slug) ? (
+                <Link
+                  key={exercise.id}
+                  to={`/practice/${exercise.slug}`}
+                  className="flex items-center justify-between rounded-card border border-line p-4"
+                >
+                  <span className="text-sm">{exercise.title}</span>
+                  <span className="text-sm text-accent">Practice</span>
+                </Link>
+              ) : (
+                <div
+                  key={exercise.id}
+                  className="flex items-center justify-between rounded-card border border-line p-4"
+                >
+                  <span className="text-sm">{exercise.title}</span>
+                  <ComingSoonBadge />
+                </div>
+              ),
+            )}
           </div>
         )}
       </Section>

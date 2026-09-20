@@ -7,6 +7,7 @@ import { Home } from "@/pages/Home";
 import { Landing } from "@/pages/Landing";
 import { Metronome } from "@/pages/Metronome";
 import { Onboarding } from "@/pages/Onboarding";
+import { Practice } from "@/pages/Practice";
 import { Profile } from "@/pages/Profile";
 import { ResetPassword } from "@/pages/ResetPassword";
 import { SignIn } from "@/pages/SignIn";
@@ -88,6 +89,19 @@ export const router = createBrowserRouter([
     element: (
       <RequireAuth>
         <Metronome />
+      </RequireAuth>
+    ),
+  },
+  {
+    // Phase 4: only exercises with mode 'single' work today (Practice.tsx
+    // only implements that mode handler). Home only links here for
+    // single-note-metronome; other exercises still show "Coming soon".
+    path: "/practice/:slug",
+    element: (
+      <RequireAuth>
+        <RequireOnboarded>
+          <Practice />
+        </RequireOnboarded>
       </RequireAuth>
     ),
   },

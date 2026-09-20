@@ -316,8 +316,34 @@ Tracks SPEC.md section 12. Update this after finishing each phase.
   - Not built yet, deliberately: Wake Lock. SPEC.md ties it to "while a
     session is open," and there's no session concept until Phase 4. Add it
     there, not here.
-- [ ] Phase 4 — Practice screen around the metronome, exercise 2 first
-- [ ] Phase 4 — Practice screen around the metronome, exercise 2 first
+- [x] **Phase 4 — Practice screen (exercise 2)**: `src/engine/practice/`
+  holds `notes.ts` (pitch classes 0-11, EN/FR display, dual enharmonic
+  spelling for accidentals per SPEC.md section 3) and
+  `useSingleNotePractice` (the mode: 'single' handler used by exercises 1
+  and 2 -- naturals/accidentals are a shuffled finite queue consumed via
+  `next()`, matching section 7's "shuffle again when it runs out"; chromatic
+  draws independently at random each time per section 3's literal wording,
+  so it never reaches a "lap finished" state). `Practice.tsx` fetches the
+  exercise by slug from Supabase and drives setup -> practicing ->
+  confidence -> summary. Home's "Single note with metronome" row now links
+  to `/practice/single-note-metronome`; the other three exercises stay
+  "Coming soon" until Phase 5 gives 'pair'/'sequence' their own handlers.
+  Verified end-to-end: pool selection, note advancement with the rep
+  counter resetting each time, the metronome running uninterrupted through
+  every note change and into the "lap finished" state (the critical
+  requirement from section 7), confidence prompt, and a summary with
+  correct counts.
+  - **No persistence at all yet, deliberately.** Notes covered/reps/session
+    length in the summary are computed purely in memory and discarded on
+    "Done" -- nothing is written to `sessions`, `session_items`,
+    `drill_stats`, `xp_events`, or `user_stats`. That's Phase 6's job
+    exactly per the build order; don't be surprised the numbers vanish on
+    reload until then.
+  - Not built yet, deliberately: Wake Lock (still Phase 4's own SPEC.md
+    line, but sequenced after this core loop landed -- add it once a
+    session's lifecycle is meaningful, i.e. alongside Phase 6's real
+    persistence, since right now a "session" is just component state that
+    vanishes on navigation anyway).
 - [ ] Phase 5 — Remaining exercise modes (1, 3, 4) on the same engine
 - [ ] Phase 6 — Session persistence, drill_stats, streak and XP logic
 - [ ] Phase 7 — Home, exercise picker, progress heatmap

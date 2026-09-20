@@ -83,6 +83,20 @@ src/
                   interleave them with other controls, not drop in a single
                   block. sound.ts synthesizes both "click" and "beep" with
                   oscillators, nothing sample-based to load.
+                  practice/ (Phases 4-5): notes.ts is the shared pitch-class
+                  <-> EN/FR naming module every mode uses. One hook per
+                  mode -- useSingleNotePractice (exercises 1-2),
+                  usePairPractice (exercise 3), useSequencePractice
+                  (exercise 4) -- each owning its own queue/lap logic, not a
+                  shared generic interface, since the three modes' shapes
+                  differ too much to force one (a pair is two notes with
+                  directions, a sequence is a list, a single is one note
+                  with history). Practice.tsx (in pages/) is a thin
+                  dispatcher on exercise.mode to *ModeScreen.tsx here, which
+                  is where "adding an exercise means inserting a row plus at
+                  most a new mode handler" (SPEC.md section 9) actually
+                  lives. ExerciseSetup, ConfidencePrompt, SessionSummary,
+                  BackButton are shared across all three mode screens.
   theme/          ThemeProvider + useTheme + the shared context (split into
                   separate files so Fast Refresh / oxlint stay happy about
                   component-only exports), plus ThemeSync (adopts
@@ -382,7 +396,43 @@ Tracks SPEC.md section 12. Update this after finishing each phase.
     it's not tied to a drill. Verified: played through a full lap with the
     metronome running, confirmed it stopped at lap-finished and did not
     resume on its own after "Shuffle again."
-- [ ] Phase 5 — Remaining exercise modes (1, 3, 4) on the same engine
+- [x] **Phase 5 — Remaining exercise modes (1, 3, 4)**: `Practice.tsx`
+  became a thin dispatcher on `exercise.mode`; exercise-specific logic
+  moved into `SingleModeScreen`/`PairModeScreen`/`SequenceModeScreen`
+  under `engine/practice/` (see the folder-structure note above for why
+  each mode gets its own hook rather than a shared interface). Exercise 1
+  (free recognition) just reuses `useSingleNotePractice` with
+  `uses_metronome: false`, no new code needed beyond wiring it up. Home no
+  longer gates any exercise behind "Coming soon" -- all 4 are real now.
+  - **Exercise 3 (pair) redesigned mid-build, per Robin:** originally built
+    as always-fresh random draws (matching a literal reading of "Draw new
+    pair... always available"), then reworked to the queue-exhaustion/lap
+    model once Robin clarified the intent: draw two notes at a time
+    without replacement until the pool runs out, exactly like the
+    single-note exercises' lap mechanic. Naturals (7) and accidentals (5)
+    are odd, so the leftover note carries into the next lap's first pair
+    (Robin's choice among three options) rather than ever being skipped.
+    SPEC.md section 4 updated to state this explicitly.
+  - **Real bug found and fixed while testing:** all three mode hooks
+    (`useSingleNotePractice`, `usePairPractice`, `useSequencePractice`)
+    seeded their queue/pair/sequence from `pool` via a `useState` lazy
+    initializer, which only runs once at mount. Since the mode screen
+    mounts before the user even sees the setup screen, changing the pool
+    in `ExerciseSetup` before pressing Start had no effect -- the hook
+    kept using whichever pool was active at mount (the exercise's
+    `default_pool`). Fixed in all three with a `useEffect` on `[pool]`
+    that rebuilds state from scratch, skipping the first run via a ref
+    (the lazy initializer already got mount right). Caught by browser
+    testing: selecting Complete for exercise 4 showed only 7 notes with a
+    repeat instead of 12 uniques -- verified fixed afterward, along with
+    re-verifying pair mode's pool switch and the pair/sequence exhaustion
+    math (chromatic: exactly 6 unique pairs across 12 notes, no repeats;
+    naturals: 3 pairs then correct carryover into the next lap).
+  - Exercises 3/4 have no "reps logged" summary stat, unlike exercises 1-2:
+    both are one continuous pass through a pattern ("without stopping"),
+    not something repeated a set number of times, so `reps_target` doesn't
+    apply the same way. Their summaries show pairs/sequences covered and
+    duration only.
 - [ ] Phase 6 — Session persistence, drill_stats, streak and XP logic
 - [ ] Phase 7 — Home, exercise picker, progress heatmap
 - [ ] Phase 8 — Milestone cards, tempo suggestion prompt

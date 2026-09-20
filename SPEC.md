@@ -118,6 +118,15 @@ The app draws two notes from the pool. Play the first going up across the
 6 strings, the second coming down, without stopping. A "Draw new pair" button
 is always available.
 
+Notes are dealt two at a time without replacement, the same lap/"shuffle
+again" shape as the single-note exercises' queue, just consuming two notes
+per draw instead of one: once the pool is exhausted, that's a lap, with the
+same "shuffle again or end session" choice. Naturals (7 notes) and
+accidentals (5) are odd, so one note is always left over when fewer than
+two remain; that note is guaranteed to open the very next lap's first pair
+rather than ever being skipped. Chromatic (12) divides evenly and never
+needs this.
+
 ### Exercise 4 — Random note sequence
 
 Pools: naturals, accidentals, chromatic, complete. Tempo ladder applies.

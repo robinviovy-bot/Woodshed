@@ -79,6 +79,23 @@ export function getNoteDisplay(pitchClass: number, notation: string): NoteDispla
   return notation === "fr" ? { primary: fr, secondary: en } : { primary: en, secondary: fr };
 }
 
+// Shared by the pair (exercise 3) and sequence (exercise 4) mode handlers,
+// which both draw fresh notes on demand rather than consuming a queue.
+export function drawRandomFrom(options: number[], exclude?: number): number {
+  if (options.length <= 1) return options[0];
+  let choice: number;
+  do {
+    choice = options[Math.floor(Math.random() * options.length)];
+  } while (choice === exclude);
+  return choice;
+}
+
+export function drawDistinctPair(options: number[]): [number, number] {
+  const first = drawRandomFrom(options);
+  const second = drawRandomFrom(options, first);
+  return [first, second];
+}
+
 export function shuffle<T>(items: T[]): T[] {
   const result = [...items];
   for (let i = result.length - 1; i > 0; i--) {

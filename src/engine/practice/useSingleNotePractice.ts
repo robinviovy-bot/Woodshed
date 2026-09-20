@@ -1,16 +1,16 @@
-import { useState } from "react";
-import { ALL_PITCH_CLASSES, getPitchClassesForPool, shuffle } from "@/engine/practice/notes";
+import { useEffect, useRef, useState } from "react";
+import {
+  ALL_PITCH_CLASSES,
+  drawRandomFrom,
+  getPitchClassesForPool,
+  shuffle,
+} from "@/engine/practice/notes";
 import type { Pool } from "@/types/database";
 
 type Phase = "active" | "roundComplete";
 
 function drawRandomPitchClass(exclude?: number): number {
-  if (ALL_PITCH_CLASSES.length <= 1) return ALL_PITCH_CLASSES[0];
-  let choice: number;
-  do {
-    choice = ALL_PITCH_CLASSES[Math.floor(Math.random() * ALL_PITCH_CLASSES.length)];
-  } while (choice === exclude);
-  return choice;
+  return drawRandomFrom(ALL_PITCH_CLASSES, exclude);
 }
 
 // Mode handler for exercises 1 and 2 (mode: 'single', SPEC.md section 4).
@@ -48,6 +48,28 @@ export function useSingleNotePractice(pool: Pool) {
   const [lapStartIndex, setLapStartIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>("active");
   const [notesCovered, setNotesCovered] = useState(1);
+
+  // The setup screen can change `pool` (via its SegmentedControl) before
+  // pressing Start, while this hook has already mounted with whatever pool
+  // was selected first. The state above only seeds correctly at mount, so
+  // this effect rebuilds it from scratch whenever `pool` actually changes
+  // afterward -- skipping the very first run, since the lazy initializers
+  // already got that one right.
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    const stillFinite = pool === "naturals" || pool === "accidentals";
+    const fresh = stillFinite ? shuffle(getPitchClassesForPool(pool)) : [drawRandomPitchClass()];
+    setPendingQueue(fresh.slice(1));
+    setHistory([fresh[0]]);
+    setHistoryIndex(0);
+    setLapStartIndex(0);
+    setPhase("active");
+    setNotesCovered(1);
+  }, [pool]);
 
   const currentPitchClass = history[historyIndex];
   const canGoBack = historyIndex > 0;

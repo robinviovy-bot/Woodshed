@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/Button";
 import { PoolBadge } from "@/components/PoolBadge";
 import { BackButton } from "@/engine/practice/BackButton";
-import { ConfidencePrompt } from "@/engine/practice/ConfidencePrompt";
 import { ExerciseSetup } from "@/engine/practice/ExerciseSetup";
 import { BeatIndicator } from "@/engine/metronome/BeatIndicator";
 import { PlayPauseButton } from "@/engine/metronome/PlayPauseButton";
@@ -19,9 +18,9 @@ import { pluralize, formatDuration } from "@/engine/practice/shared";
 import { SessionSummary } from "@/engine/practice/SessionSummary";
 import { useSequencePractice } from "@/engine/practice/useSequencePractice";
 import { useSequenceTest } from "@/engine/practice/useSequenceTest";
-import type { Confidence, Exercise, Pool } from "@/types/database";
+import type { Exercise, Pool } from "@/types/database";
 
-type ScreenPhase = "setup" | "practicing" | "confidence" | "summary";
+type ScreenPhase = "setup" | "practicing" | "summary";
 
 // Mode: 'sequence' (exercise 4). "Draw new sequence" is always available
 // (SPEC.md section 4) -- no queue, no lap-finished state. Same as pair
@@ -47,7 +46,6 @@ export function SequenceModeScreen({
 }) {
   const [screenPhase, setScreenPhase] = useState<ScreenPhase>("setup");
   const [pool, setPool] = useState<Pool>(exercise.default_pool);
-  const [confidence, setConfidence] = useState<Confidence | null>(null);
   const [sessionStart, setSessionStart] = useState<number | null>(null);
   const [sessionEnd, setSessionEnd] = useState<number | null>(null);
 
@@ -62,7 +60,7 @@ export function SequenceModeScreen({
 
   function handleEndSession() {
     setSessionEnd(Date.now());
-    setScreenPhase("confidence");
+    setScreenPhase("summary");
   }
 
   if (screenPhase === "setup") {
@@ -79,17 +77,6 @@ export function SequenceModeScreen({
     );
   }
 
-  if (screenPhase === "confidence") {
-    return (
-      <ConfidencePrompt
-        onChoose={(value) => {
-          setConfidence(value);
-          setScreenPhase("summary");
-        }}
-      />
-    );
-  }
-
   if (screenPhase === "summary") {
     const sessionSeconds =
       sessionStart && sessionEnd ? Math.round((sessionEnd - sessionStart) / 1000) : 0;
@@ -99,7 +86,6 @@ export function SequenceModeScreen({
           `${pluralize(practice.sequencesCovered, "sequence")} covered`,
           formatDuration(sessionSeconds),
         ]}
-        confidence={confidence}
         onDone={onExit}
       />
     );

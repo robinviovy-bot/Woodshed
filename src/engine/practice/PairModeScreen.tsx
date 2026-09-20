@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/Button";
 import { PoolBadge } from "@/components/PoolBadge";
 import { BackButton } from "@/engine/practice/BackButton";
-import { ConfidencePrompt } from "@/engine/practice/ConfidencePrompt";
 import { ExerciseSetup } from "@/engine/practice/ExerciseSetup";
 import { BeatIndicator } from "@/engine/metronome/BeatIndicator";
 import { PlayPauseButton } from "@/engine/metronome/PlayPauseButton";
@@ -15,9 +14,9 @@ import { PairDisplay } from "@/engine/practice/PairDisplay";
 import { POOL_LABELS, pluralize, formatDuration } from "@/engine/practice/shared";
 import { SessionSummary } from "@/engine/practice/SessionSummary";
 import { usePairPractice } from "@/engine/practice/usePairPractice";
-import type { Confidence, Exercise, Pool } from "@/types/database";
+import type { Exercise, Pool } from "@/types/database";
 
-type ScreenPhase = "setup" | "practicing" | "confidence" | "summary";
+type ScreenPhase = "setup" | "practicing" | "summary";
 
 // Mode: 'pair' (exercise 3). Notes are dealt two at a time without
 // replacement until the pool runs out, same lap/"shuffle again" shape as
@@ -37,7 +36,6 @@ export function PairModeScreen({
 }) {
   const [screenPhase, setScreenPhase] = useState<ScreenPhase>("setup");
   const [pool, setPool] = useState<Pool>(exercise.default_pool);
-  const [confidence, setConfidence] = useState<Confidence | null>(null);
   const [sessionStart, setSessionStart] = useState<number | null>(null);
   const [sessionEnd, setSessionEnd] = useState<number | null>(null);
 
@@ -52,7 +50,7 @@ export function PairModeScreen({
 
   function handleEndSession() {
     setSessionEnd(Date.now());
-    setScreenPhase("confidence");
+    setScreenPhase("summary");
   }
 
   if (screenPhase === "setup") {
@@ -69,24 +67,12 @@ export function PairModeScreen({
     );
   }
 
-  if (screenPhase === "confidence") {
-    return (
-      <ConfidencePrompt
-        onChoose={(value) => {
-          setConfidence(value);
-          setScreenPhase("summary");
-        }}
-      />
-    );
-  }
-
   if (screenPhase === "summary") {
     const sessionSeconds =
       sessionStart && sessionEnd ? Math.round((sessionEnd - sessionStart) / 1000) : 0;
     return (
       <SessionSummary
         stats={[`${pluralize(practice.pairsCovered, "pair")} covered`, formatDuration(sessionSeconds)]}
-        confidence={confidence}
         onDone={onExit}
       />
     );

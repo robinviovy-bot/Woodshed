@@ -489,6 +489,20 @@ Tracks SPEC.md section 12. Update this after finishing each phase.
     tripping over a mounted practice screen while this file and
     useMetronome.ts were being edited live in the same session, not a
     logic bug in the shipped code.
+  - **Confidence prompt removed from the end-of-session flow, per Robin:**
+    "How did that feel?" added a decision the summary screen didn't need
+    yet -- nothing persists the answer until Phase 6 exists, so asking for
+    it was complexity without payoff. All three mode screens now go
+    straight from "End session" to the summary; `ScreenPhase` dropped its
+    `"confidence"` value entirely rather than keeping it around unused.
+    `ConfidencePrompt.tsx` is deleted (not just unwired) and
+    `SessionSummary` no longer takes a `confidence` prop, per the project's
+    own no-dead-code stance -- git history has the exact prior
+    implementation if Phase 6 wants to reinstate the same screen once
+    there's somewhere for the rating to go. SPEC.md section 7's "confidence
+    prompt (Rough / OK / Solid, skippable)" line is left as-is: it still
+    describes the intended eventual flow, same as this section's earlier
+    Wake Lock deferrals.
 - [ ] Phase 6 — Session persistence, drill_stats, streak and XP logic
 - [ ] Phase 7 — Home, exercise picker, progress heatmap
 - [ ] Phase 8 — Milestone cards, tempo suggestion prompt

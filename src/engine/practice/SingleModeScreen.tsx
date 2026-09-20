@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/Button";
 import { PoolBadge } from "@/components/PoolBadge";
 import { BackButton } from "@/engine/practice/BackButton";
-import { ConfidencePrompt } from "@/engine/practice/ConfidencePrompt";
 import { ExerciseSetup } from "@/engine/practice/ExerciseSetup";
 import { BeatIndicator } from "@/engine/metronome/BeatIndicator";
 import { BpmStepper } from "@/engine/metronome/BpmStepper";
@@ -15,9 +14,9 @@ import { NoteNavigator } from "@/engine/practice/NoteNavigator";
 import { POOL_LABELS, pluralize, formatDuration } from "@/engine/practice/shared";
 import { SessionSummary } from "@/engine/practice/SessionSummary";
 import { useSingleNotePractice } from "@/engine/practice/useSingleNotePractice";
-import type { Confidence, Exercise, Pool } from "@/types/database";
+import type { Exercise, Pool } from "@/types/database";
 
-type ScreenPhase = "setup" | "practicing" | "confidence" | "summary";
+type ScreenPhase = "setup" | "practicing" | "summary";
 
 // Mode: 'single' (exercises 1 and 2). No session persistence yet -- Phase
 // 6's job. Everything here is in-memory only, discarded on "Done".
@@ -34,7 +33,6 @@ export function SingleModeScreen({
 }) {
   const [screenPhase, setScreenPhase] = useState<ScreenPhase>("setup");
   const [pool, setPool] = useState<Pool>(exercise.default_pool);
-  const [confidence, setConfidence] = useState<Confidence | null>(null);
   const [sessionStart, setSessionStart] = useState<number | null>(null);
   const [sessionEnd, setSessionEnd] = useState<number | null>(null);
 
@@ -42,8 +40,8 @@ export function SingleModeScreen({
   const practice = useSingleNotePractice(pool);
 
   // The metronome only ever runs while a drill is actively open (SPEC.md's
-  // practice-screen section): reaching lap-finished, the confidence
-  // prompt, or the summary all stop it. It never auto-restarts on its own.
+  // practice-screen section): reaching lap-finished or the summary both
+  // stop it. It never auto-restarts on its own.
   const stopMetronome = metronome.stop;
   useEffect(() => {
     const isActivelyPracticing = screenPhase === "practicing" && practice.phase === "active";
@@ -52,7 +50,7 @@ export function SingleModeScreen({
 
   function handleEndSession() {
     setSessionEnd(Date.now());
-    setScreenPhase("confidence");
+    setScreenPhase("summary");
   }
 
   if (screenPhase === "setup") {
@@ -69,23 +67,12 @@ export function SingleModeScreen({
     );
   }
 
-  if (screenPhase === "confidence") {
-    return (
-      <ConfidencePrompt
-        onChoose={(value) => {
-          setConfidence(value);
-          setScreenPhase("summary");
-        }}
-      />
-    );
-  }
-
   if (screenPhase === "summary") {
     const sessionSeconds =
       sessionStart && sessionEnd ? Math.round((sessionEnd - sessionStart) / 1000) : 0;
     // Reps aren't tallied (see useSingleNotePractice's header comment) --
     // derived instead by trusting the "play it N times" instruction was
-    // followed, same unverified spirit as the confidence rating.
+    // followed.
     const repsLogged = practice.notesCovered * exercise.config.reps_target;
     return (
       <SessionSummary
@@ -94,7 +81,6 @@ export function SingleModeScreen({
           `${pluralize(repsLogged, "rep")} logged`,
           formatDuration(sessionSeconds),
         ]}
-        confidence={confidence}
         onDone={onExit}
       />
     );

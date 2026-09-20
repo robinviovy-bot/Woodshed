@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router-dom";
 import { RequireAuth } from "@/auth/RequireAuth";
 import { RequireGuest } from "@/auth/RequireGuest";
 import { RequireOnboarded } from "@/auth/RequireOnboarded";
+import { ExercisePicker } from "@/pages/ExercisePicker";
 import { ForgotPassword } from "@/pages/ForgotPassword";
 import { Home } from "@/pages/Home";
 import { Landing } from "@/pages/Landing";
@@ -13,10 +14,9 @@ import { ResetPassword } from "@/pages/ResetPassword";
 import { SignIn } from "@/pages/SignIn";
 import { SignUp } from "@/pages/SignUp";
 
-// ExercisePicker, practice, and progress screens land in later build-order
-// phases per SPEC.md section 12. /home is the landing spot for a signed-in,
-// onboarded user; its exercise list is read-only ("coming soon") until
-// Phase 4/5 give it somewhere real to link to.
+// /home is the landing spot for a signed-in, onboarded user. Its "Lessons"
+// list links to ExercisePicker (one lesson today: Fretboard 101), which in
+// turn links to Practice for each of that lesson's exercises.
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -93,9 +93,16 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    // Phase 4: only exercises with mode 'single' work today (Practice.tsx
-    // only implements that mode handler). Home only links here for
-    // single-note-metronome; other exercises still show "Coming soon".
+    path: "/lessons/:slug",
+    element: (
+      <RequireAuth>
+        <RequireOnboarded>
+          <ExercisePicker />
+        </RequireOnboarded>
+      </RequireAuth>
+    ),
+  },
+  {
     path: "/practice/:slug",
     element: (
       <RequireAuth>

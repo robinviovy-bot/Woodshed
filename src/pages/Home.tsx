@@ -1,37 +1,33 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/Button";
+import { MetronomeIcon } from "@/components/MetronomeIcon";
 import { Section } from "@/components/Section";
 import { supabase } from "@/lib/supabase";
-import type { Exercise, Program } from "@/types/database";
+import type { Program } from "@/types/database";
 
-type ExerciseSummary = Pick<Exercise, "id" | "slug" | "title" | "position">;
-type ProgramWithExercises = Program & { exercises: ExerciseSummary[] };
+type ProgramSummary = Pick<Program, "id" | "slug" | "title" | "subtitle" | "position">;
 
-// All 4 exercises have a real practice screen as of Phase 5.
+// The metronome gets an icon-only link, not a labelled section -- its
+// shape is recognizable on its own and it isn't a lesson. Everything
+// lesson-like (today: just Fretboard 101) lives under "Lessons" instead,
+// each one linking to ExercisePicker for its exercise list.
 export function Home() {
-  const [program, setProgram] = useState<ProgramWithExercises | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [programs, setPrograms] = useState<ProgramSummary[] | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function loadProgram() {
+    async function loadPrograms() {
       const { data } = await supabase
         .from("programs")
-        .select("*, exercises(id, slug, title, position)")
-        .eq("slug", "fretboard-101")
-        .single();
+        .select("id, slug, title, subtitle, position")
+        .order("position");
 
       if (cancelled) return;
-      if (data) {
-        const typed = data as ProgramWithExercises;
-        setProgram({ ...typed, exercises: [...typed.exercises].sort((a, b) => a.position - b.position) });
-      }
-      setLoading(false);
+      if (data) setPrograms(data as ProgramSummary[]);
     }
 
-    loadProgram();
+    loadPrograms();
     return () => {
       cancelled = true;
     };
@@ -46,27 +42,25 @@ export function Home() {
         </Link>
       </header>
 
-      <Section title="Metronome">
-        <Link to="/metronome">
-          <Button variant="primary" className="w-full">
-            Open metronome
-          </Button>
-        </Link>
-      </Section>
+      <Link to="/metronome" aria-label="Open metronome" className="self-start">
+        <MetronomeIcon />
+      </Link>
 
-      <Section title={program?.title ?? "Fretboard 101"}>
-        {loading ? (
+      <Section title="Lessons">
+        {programs === null ? (
           <p className="text-sm text-ink-muted">Loading…</p>
         ) : (
           <div className="flex flex-col gap-2">
-            {program?.exercises.map((exercise) => (
+            {programs.map((program) => (
               <Link
-                key={exercise.id}
-                to={`/practice/${exercise.slug}`}
-                className="flex items-center justify-between rounded-card border border-line p-4"
+                key={program.id}
+                to={`/lessons/${program.slug}`}
+                className="flex flex-col gap-0.5 rounded-card border border-line p-4"
               >
-                <span className="text-sm">{exercise.title}</span>
-                <span className="text-sm text-accent">Practice</span>
+                <span className="text-sm">{program.title}</span>
+                {program.subtitle && (
+                  <span className="text-sm text-ink-secondary">{program.subtitle}</span>
+                )}
               </Link>
             ))}
           </div>

@@ -65,9 +65,11 @@ src/
                   profile.first_name is still null -- wrap INSIDE
                   RequireAuth, never the reverse).
   pages/          Route-level screens (one per route): Landing, SignUp,
-                  SignIn, ForgotPassword, ResetPassword, Onboarding, Profile
-                  today; Home, ExercisePicker, Practice, Progress land in
-                  later phases.
+                  SignIn, ForgotPassword, ResetPassword, Onboarding, Profile,
+                  Home, Metronome, Practice, ExercisePicker. No Progress
+                  screen -- dropped entirely in the freshness redesign (see
+                  the design-session note below); the exercise picker
+                  absorbed its job.
   components/     Small, reusable UI pieces used by more than one page
                   (Button, TextField, AuthLayout, Section, SegmentedControl,
                   PoolBadge, ComingSoonBadge, LoadingScreen, ...).
@@ -95,8 +97,8 @@ src/
                   dispatcher on exercise.mode to *ModeScreen.tsx here, which
                   is where "adding an exercise means inserting a row plus at
                   most a new mode handler" (SPEC.md section 9) actually
-                  lives. ExerciseSetup, ConfidencePrompt, SessionSummary,
-                  BackButton are shared across all three mode screens.
+                  lives. ExerciseSetup, SessionSummary, BackButton are
+                  shared across all three mode screens.
   theme/          ThemeProvider + useTheme + the shared context (split into
                   separate files so Fast Refresh / oxlint stay happy about
                   component-only exports), plus ThemeSync (adopts
@@ -503,6 +505,21 @@ Tracks SPEC.md section 12. Update this after finishing each phase.
     prompt (Rough / OK / Solid, skippable)" line is left as-is: it still
     describes the intended eventual flow, same as this section's earlier
     Wake Lock deferrals.
+- **Another small pull-forward from Phase 7, per Robin:** Home no longer
+  lists Fretboard 101's exercises directly. It now shows a "Lessons"
+  section ("Lessons" is a placeholder name -- flagged to Robin that
+  something more musical like "Etudes" might fit better, trivial to swap
+  later) listing programs (today: just Fretboard 101), each linking to the
+  new `ExercisePicker` page (`pages/ExercisePicker.tsx`, route
+  `/lessons/:slug`) for that program's exercise list -- exactly what Home
+  used to render inline, just moved one level down now that Home has more
+  than one kind of thing on it. New `components/MetronomeIcon.tsx` replaces
+  the old "Metronome" section and its "Open metronome" button with a bare
+  icon link (no label -- Robin's call, the shape reads on its own): a
+  hand-drawn outline SVG of a classic mechanical metronome (trapezoidal
+  case, small feet, a base line, tick marks on the central shaft, a
+  pendulum arm leaning right ending in a circular weight), `currentColor`
+  + `var(--color-ink)` so it follows the theme like every other icon here.
 - [ ] Phase 6 — Session persistence, drill_stats, streak and XP logic
 - [ ] Phase 7 — Home, exercise picker, progress heatmap
 - [ ] Phase 8 — Milestone cards, tempo suggestion prompt

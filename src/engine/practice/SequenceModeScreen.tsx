@@ -124,8 +124,14 @@ export function SequenceModeScreen({
         {test.phase === "countdown" && (
           <div className="flex items-center justify-center gap-6">
             <div className="flex flex-col items-center gap-2 text-center">
-              <p className="font-display text-8xl leading-none">{test.countdownBeatsLeft}</p>
-              <p className="text-sm text-ink-secondary">Get ready</p>
+              {test.countdownBeatsLeft === null ? (
+                <p className="font-display text-5xl leading-none">Ready?</p>
+              ) : (
+                <>
+                  <p className="font-display text-8xl leading-none">{test.countdownBeatsLeft}</p>
+                  <p className="text-sm text-ink-secondary">Get ready</p>
+                </>
+              )}
             </div>
             <div className="flex flex-col items-center gap-1 opacity-50">
               <DirectionArrow direction="up" />

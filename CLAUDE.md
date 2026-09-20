@@ -476,6 +476,19 @@ Tracks SPEC.md section 12. Update this after finishing each phase.
     exactly on "the 1," regardless of time signature. (3) The countdown
     now also previews the first note small alongside the countdown number,
     matching the current/next layout used once the run is underway.
+  - **Lead-in reshaped to "Ready?" then 3-2-1, per Robin:** the countdown's
+    very first beat now shows "Ready?" (no number) instead of "3", with
+    "3", "2", "1" on the next three beats and note 1 starting on the beat
+    after that -- `LEAD_IN_BEATS` in `useSequenceTest.ts` went from 3 to 4
+    to fit the extra beat, and `countdownBeatsLeft` is `number | null` now
+    (`null` meaning "Ready?"). The downbeat-alignment math already took the
+    lead-in length as a variable, so it needed no separate change beyond
+    that constant. Also stress-tested "Stop test" from every phase (Ready,
+    3-2-1, mid-run) after Robin hit an error there -- couldn't reproduce a
+    crash on a clean reload; the likely cause was Vite Fast Refresh
+    tripping over a mounted practice screen while this file and
+    useMetronome.ts were being edited live in the same session, not a
+    logic bug in the shipped code.
 - [ ] Phase 6 — Session persistence, drill_stats, streak and XP logic
 - [ ] Phase 7 — Home, exercise picker, progress heatmap
 - [ ] Phase 8 — Milestone cards, tempo suggestion prompt

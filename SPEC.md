@@ -140,10 +140,11 @@ alternating through the whole sequence, without stopping. A "Draw new
 sequence" button is always available.
 
 A "Start test" button offers a second, guided way to play the same
-sequence: a 3-2-1 countdown timed to the metronome (with the first note
-previewed small next to the countdown), then the screen shows one note at a
-time (instead of the whole sequence at once) for six beats each, one beat
-per string, with the next note shown small alongside the current one. The
+sequence: "Ready?" on the beat right after pressing it, then a 3-2-1
+countdown timed to the metronome (with the first note previewed small next
+to "Ready?"/the countdown), then the screen shows one note at a time
+(instead of the whole sequence at once) for six beats each, one beat per
+string, with the next note shown small alongside the current one. The
 countdown always lands the first note on the metronome's accented downbeat
 ("the 1"), regardless of the selected time signature. It stops
 automatically after the last note and returns to the normal view. Starting

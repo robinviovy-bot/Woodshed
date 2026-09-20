@@ -607,7 +607,51 @@ Tracks SPEC.md section 12. Update this after finishing each phase.
     exactly the gap flagged back in the freshness design session: revisit
     with a real per-program query, and per-program `is_rest_day`
     semantics, once a second program exists.
-- [ ] Phase 7 — Home, exercise picker, progress heatmap
+- [x] **Phase 7 — Home, exercise picker, progress heatmap** (the exercise
+  picker's BPM-ladder expansion is the one piece deliberately left out --
+  see the scope-cut note below; everything else SPEC.md section 7's Home
+  bullet list asks for is built). Home now shows, top to bottom: the
+  header (avatar, streak badge -- both from the Phase 6 entry above), the
+  metronome icon, a greeting line with best streak plus
+  `components/LevelProgress.tsx` (level and an XP bar filling across the
+  current level's own span, `250*n*(n-1)` per SPEC.md section 6),
+  `components/ActivityHeatmap.tsx` (8 weeks x 7 days, small squares,
+  `--color-success` for a practiced day vs `--color-line` for empty --
+  scoped to the real Fretboard 101 `program_id` via `daily_activity`, not
+  the single-program user_stats shortcut, since daily_activity already
+  carries a real per-program id), a "Continue" button (resumes the most
+  recently practiced drill) when one exists, `components/DueForReview.tsx`
+  (up to three drills stale 3+ days per `drill_stats.last_practiced_on`,
+  hidden entirely when none qualify) when any exist, then Lessons.
+  "Continue" and "Due for review" rows both deep-link straight into
+  practicing via new `?pool=&bpm=` query params on `/practice/:slug`
+  (`Practice.tsx` reads them and passes `initialPool`/`initialBpm` to
+  whichever mode screen renders) rather than landing on ExerciseSetup --
+  true to SPEC.md's "one tap row" wording. Each mode screen starts
+  `screenPhase` at `"practicing"` directly when `initialPool` is set, and
+  an `autoStarted` ref-guarded effect calls `usePracticeSession.begin()`
+  once on mount in ExerciseSetup's onStart's place.
+  - **Scope cut, per Robin:** the exercise picker itself doesn't get the
+    "expanding rows reveal a BPM ladder, each BPM reveals a pool segmented
+    control" treatment SPEC.md section 7 describes -- with only one lesson
+    today, the flat "tap an exercise, then pick a pool inside it" flow
+    already built is straightforward enough. Revisit once a second lesson
+    exists and picking a lesson-then-exercise actually needs the extra
+    structure. This is also why `lib/sessions.ts`'s nearest-BPM-rung
+    `resolveDrillId()` approximation (Phase 6) stays as-is rather than
+    getting resolved by a real ladder-picking UI.
+  - **A Supabase client-typing gotcha, for next time:** `drills.select("*,
+    exercises(...)")` is a many-to-one embed (many drills, one exercise),
+    which PostgREST returns as a single object per row -- but this
+    project's untyped Supabase client can't tell the difference from a
+    one-to-many embed and infers `exercises` as an array regardless.
+    Verified against the live response in the browser before committing to
+    `as unknown as DrillWithExercise[]` in Home.tsx rather than trusting
+    the inferred array type. The other direction (`programs.select("*,
+    exercises(...)")`, genuinely one-to-many) really is an array, as
+    Home.tsx's `ProgramWithExercises` cast from Phase 3 already assumed
+    correctly -- the inferred type just happens to be right there and
+    wrong here, so don't trust it either way without checking.
 - [ ] Phase 8 — Milestone cards, tempo suggestion prompt
 - [ ] Phase 9 — PWA manifest, service worker, icons
 - [ ] Phase 10 — Deploy to Vercel

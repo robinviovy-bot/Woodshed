@@ -31,3 +31,16 @@ export function shiftDay(day: string, deltaDays: number): string {
   date.setUTCDate(date.getUTCDate() + deltaDays);
   return date.toISOString().slice(0, 10);
 }
+
+// Plain text, no colored dot (SPEC.md section 7's "Due for review" row --
+// freshness no longer exists at the drill level).
+export function formatRelativeDate(day: string, today: string): string {
+  const gap = daysBetween(day, today);
+  if (gap === 0) return "Today";
+  if (gap === 1) return "Yesterday";
+  if (gap < 7) return `${gap} days ago`;
+  if (gap < 14) return "1 week ago";
+  if (gap < 30) return `${Math.floor(gap / 7)} weeks ago`;
+  if (gap < 60) return "1 month ago";
+  return `${Math.floor(gap / 30)} months ago`;
+}

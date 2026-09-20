@@ -1,32 +1,61 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
+import { ActivityHeatmap } from "@/components/ActivityHeatmap";
+import { Button } from "@/components/Button";
+import { DueForReview, type DueForReviewItem } from "@/components/DueForReview";
 import { FreshnessIcon } from "@/components/FreshnessIcon";
+import { LevelProgress } from "@/components/LevelProgress";
 import { MetronomeIcon } from "@/components/MetronomeIcon";
 import { Section } from "@/components/Section";
-import { getLocalDay } from "@/lib/dates";
+import { daysBetween, formatRelativeDate, getLocalDay, shiftDay } from "@/lib/dates";
 import { computeFreshness, type Freshness } from "@/lib/freshness";
 import { supabase } from "@/lib/supabase";
-import type { Program } from "@/types/database";
+import type { Pool, Program } from "@/types/database";
 
 type ProgramSummary = Pick<Program, "id" | "slug" | "title" | "subtitle" | "position">;
+
+interface DrillWithExercise {
+  id: string;
+  bpm: number | null;
+  pool: Pool;
+  exercises: { slug: string; title: string; program_id: string } | null;
+}
+
+interface ContinueItem {
+  exerciseSlug: string;
+  exerciseTitle: string;
+  bpm: number | null;
+  pool: Pool;
+}
+
+const STALE_AFTER_DAYS = 3; // matches "cooling down"'s onset in the freshness table
 
 // The metronome gets an icon-only link, not a labelled section -- its
 // shape is recognizable on its own and it isn't a lesson. Everything
 // lesson-like (today: just Fretboard 101) lives under "Lessons" instead,
 // each one linking to ExercisePicker for its exercise list.
 //
-// The streak badge next to the avatar and each lesson card's freshness
-// icon both read the same user_stats row (current_streak,
-// last_practiced_day) -- exact while there's only one program, since
-// "any practice in the program" and "any practice at all" are the same
-// thing today. A second program will need its own daily_activity-based
-// per-program streak instead (flagged in CLAUDE.md).
+// The streak badge next to the avatar, the level/XP bar, best streak, and
+// each lesson card's freshness icon all read the same user_stats row
+// (current_streak, longest_streak, total_xp, last_practiced_day) -- exact
+// while there's only one program, since "any practice in the program" and
+// "any practice at all" are the same thing today. The 8 week heatmap and
+// "due for review" DO scope to the one real program (via daily_activity's
+// and drills/exercises' own program_id), since that data already exists
+// per-program correctly -- only the streak/level numbers are the
+// single-program shortcut. A second program will need its own
+// daily_activity-based per-program streak instead (flagged in CLAUDE.md).
 export function Home() {
   const { user, profile } = useAuth();
   const [programs, setPrograms] = useState<ProgramSummary[] | null>(null);
   const [freshness, setFreshness] = useState<Freshness | null>(null);
   const [streak, setStreak] = useState(0);
+  const [longestStreak, setLongestStreak] = useState(0);
+  const [levelInfo, setLevelInfo] = useState<{ level: number; totalXp: number } | null>(null);
+  const [practicedDays, setPracticedDays] = useState<Set<string>>(new Set());
+  const [dueItems, setDueItems] = useState<DueForReviewItem[]>([]);
+  const [continueItem, setContinueItem] = useState<ContinueItem | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,25 +79,104 @@ export function Home() {
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
+    const userId = user.id;
 
-    async function loadStreak() {
-      const { data } = await supabase
-        .from("user_stats")
-        .select("current_streak, last_practiced_day")
-        .eq("user_id", user!.id)
-        .maybeSingle();
+    async function loadDashboard() {
+      const today = getLocalDay(profile?.timezone ?? null);
+
+      const [{ data: stats }, { data: program }, { data: drillRows }] = await Promise.all([
+        supabase
+          .from("user_stats")
+          .select("total_xp, level, current_streak, longest_streak, last_practiced_day")
+          .eq("user_id", userId)
+          .maybeSingle(),
+        supabase.from("programs").select("id").eq("slug", "fretboard-101").maybeSingle(),
+        supabase.from("drills").select("id, bpm, pool, exercises(slug, title, program_id)"),
+      ]);
 
       if (cancelled) return;
-      const today = getLocalDay(profile?.timezone ?? null);
-      setStreak(data?.current_streak ?? 0);
-      setFreshness(computeFreshness(data?.last_practiced_day ?? null, data?.current_streak ?? 0, today));
+
+      const currentStreak = stats?.current_streak ?? 0;
+      setStreak(currentStreak);
+      setLongestStreak(stats?.longest_streak ?? 0);
+      setLevelInfo({ level: stats?.level ?? 1, totalXp: stats?.total_xp ?? 0 });
+      setFreshness(computeFreshness(stats?.last_practiced_day ?? null, currentStreak, today));
+
+      if (!program || !drillRows) return;
+      // Supabase's untyped client can't tell this is a many-to-one embed
+      // (drills.exercise_id -> exercises.id), so it infers `exercises` as
+      // an array; PostgREST actually returns a single object for a
+      // forward FK embed like this one (verified against the live
+      // response), matching the interface above.
+      const drills = drillRows as unknown as DrillWithExercise[];
+      const drillById = new Map(drills.map((drill) => [drill.id, drill]));
+
+      const [{ data: activity }, { data: drillStatRows }, { data: lastSession }] = await Promise.all([
+        supabase
+          .from("daily_activity")
+          .select("day")
+          .eq("user_id", userId)
+          .eq("program_id", program.id)
+          .eq("is_rest_day", false)
+          .gte("day", shiftDay(today, -55)),
+        supabase
+          .from("drill_stats")
+          .select("drill_id, last_practiced_on")
+          .eq("user_id", userId)
+          .not("last_practiced_on", "is", null),
+        supabase
+          .from("sessions")
+          .select("drill_id")
+          .eq("user_id", userId)
+          .order("started_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+
+      if (cancelled) return;
+
+      setPracticedDays(new Set((activity ?? []).map((row) => row.day as string)));
+
+      const due = (drillStatRows ?? [])
+        .map((row) => ({ drill: drillById.get(row.drill_id), lastPracticedOn: row.last_practiced_on as string }))
+        .filter(
+          (row): row is { drill: DrillWithExercise; lastPracticedOn: string } =>
+            !!row.drill?.exercises && row.drill.exercises.program_id === program.id,
+        )
+        .filter((row) => daysBetween(row.lastPracticedOn, today) >= STALE_AFTER_DAYS)
+        .sort((a, b) => daysBetween(b.lastPracticedOn, today) - daysBetween(a.lastPracticedOn, today))
+        .slice(0, 3)
+        .map(
+          (row): DueForReviewItem => ({
+            exerciseSlug: row.drill.exercises!.slug,
+            exerciseTitle: row.drill.exercises!.title,
+            bpm: row.drill.bpm,
+            pool: row.drill.pool,
+            relativeDate: formatRelativeDate(row.lastPracticedOn, today),
+          }),
+        );
+      setDueItems(due);
+
+      const lastDrill = lastSession ? drillById.get(lastSession.drill_id) : null;
+      setContinueItem(
+        lastDrill?.exercises
+          ? {
+              exerciseSlug: lastDrill.exercises.slug,
+              exerciseTitle: lastDrill.exercises.title,
+              bpm: lastDrill.bpm,
+              pool: lastDrill.pool,
+            }
+          : null,
+      );
     }
 
-    loadStreak();
+    loadDashboard();
     return () => {
       cancelled = true;
     };
   }, [user, profile?.timezone]);
+
+  const today = getLocalDay(profile?.timezone ?? null);
 
   return (
     <div className="mx-auto flex min-h-screen max-w-[480px] flex-col gap-10 px-6 py-10">
@@ -114,6 +222,31 @@ export function Home() {
         <MetronomeIcon size={56} />
       </Link>
 
+      {levelInfo && (
+        <div className="flex flex-col gap-3">
+          <p className="text-sm text-ink-secondary">
+            Hey {profile?.first_name ?? "there"}, best streak {pluralizeDays(longestStreak)}.
+          </p>
+          <LevelProgress level={levelInfo.level} totalXp={levelInfo.totalXp} />
+        </div>
+      )}
+
+      <ActivityHeatmap today={today} practicedDays={practicedDays} />
+
+      {continueItem && (
+        <Link
+          to={`/practice/${continueItem.exerciseSlug}?pool=${continueItem.pool}${
+            continueItem.bpm !== null ? `&bpm=${continueItem.bpm}` : ""
+          }`}
+        >
+          <Button variant="primary" className="w-full">
+            Continue {continueItem.exerciseTitle}
+          </Button>
+        </Link>
+      )}
+
+      <DueForReview items={dueItems} />
+
       <Section title="Lessons">
         {programs === null ? (
           <p className="text-sm text-ink-muted">Loading…</p>
@@ -139,4 +272,8 @@ export function Home() {
       </Section>
     </div>
   );
+}
+
+function pluralizeDays(count: number): string {
+  return `${count} day${count === 1 ? "" : "s"}`;
 }

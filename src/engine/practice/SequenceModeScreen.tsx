@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/Button";
 import { PoolBadge } from "@/components/PoolBadge";
 import { BackButton } from "@/engine/practice/BackButton";
@@ -39,18 +39,22 @@ export function SequenceModeScreen({
   notation,
   metronomeSound,
   onExit,
+  initialPool,
+  initialBpm,
 }: {
   exercise: Exercise;
   notation: string;
   metronomeSound: MetronomeSound;
   onExit: () => void;
+  initialPool?: Pool;
+  initialBpm?: number;
 }) {
-  const [screenPhase, setScreenPhase] = useState<ScreenPhase>("setup");
-  const [pool, setPool] = useState<Pool>(exercise.default_pool);
-  const [sessionStart, setSessionStart] = useState<number | null>(null);
+  const [screenPhase, setScreenPhase] = useState<ScreenPhase>(initialPool ? "practicing" : "setup");
+  const [pool, setPool] = useState<Pool>(initialPool ?? exercise.default_pool);
+  const [sessionStart, setSessionStart] = useState<number | null>(() => (initialPool ? Date.now() : null));
   const [sessionEnd, setSessionEnd] = useState<number | null>(null);
 
-  const metronome = useMetronome(40, metronomeSound);
+  const metronome = useMetronome(initialBpm ?? 40, metronomeSound);
   const practice = useSequencePractice(pool, exercise.config.sequence_length ?? 7);
   const test = useSequenceTest(practice.sequence.length, metronome);
   const session = usePracticeSession(exercise, pool);
@@ -59,6 +63,17 @@ export function SequenceModeScreen({
   useEffect(() => {
     if (screenPhase !== "practicing") stopMetronome();
   }, [screenPhase, stopMetronome]);
+
+  // autoStarted guards session.begin() to fire exactly once for a
+  // deep-linked drill (same as ExerciseSetup's onStart does normally),
+  // even though this effect re-runs on every bpm/time-signature change.
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (initialPool && !autoStarted.current) {
+      autoStarted.current = true;
+      session.begin(metronome.bpm, metronome.timeSignature);
+    }
+  }, [initialPool, session, metronome.bpm, metronome.timeSignature]);
 
   function handleEndSession() {
     setSessionEnd(Date.now());

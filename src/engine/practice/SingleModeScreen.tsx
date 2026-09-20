@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/Button";
 import { PoolBadge } from "@/components/PoolBadge";
 import { BackButton } from "@/engine/practice/BackButton";
@@ -19,24 +19,30 @@ import type { Exercise, Pool } from "@/types/database";
 
 type ScreenPhase = "setup" | "practicing" | "summary";
 
-// Mode: 'single' (exercises 1 and 2).
+// Mode: 'single' (exercises 1 and 2). initialPool/initialBpm (from Home's
+// "Continue" and "Due for review" rows) skip ExerciseSetup entirely and
+// start practicing immediately -- see Practice.tsx's header comment.
 export function SingleModeScreen({
   exercise,
   notation,
   metronomeSound,
   onExit,
+  initialPool,
+  initialBpm,
 }: {
   exercise: Exercise;
   notation: string;
   metronomeSound: MetronomeSound;
   onExit: () => void;
+  initialPool?: Pool;
+  initialBpm?: number;
 }) {
-  const [screenPhase, setScreenPhase] = useState<ScreenPhase>("setup");
-  const [pool, setPool] = useState<Pool>(exercise.default_pool);
-  const [sessionStart, setSessionStart] = useState<number | null>(null);
+  const [screenPhase, setScreenPhase] = useState<ScreenPhase>(initialPool ? "practicing" : "setup");
+  const [pool, setPool] = useState<Pool>(initialPool ?? exercise.default_pool);
+  const [sessionStart, setSessionStart] = useState<number | null>(() => (initialPool ? Date.now() : null));
   const [sessionEnd, setSessionEnd] = useState<number | null>(null);
 
-  const metronome = useMetronome(40, metronomeSound);
+  const metronome = useMetronome(initialBpm ?? 40, metronomeSound);
   const practice = useSingleNotePractice(pool);
   const session = usePracticeSession(exercise, pool);
 
@@ -48,6 +54,17 @@ export function SingleModeScreen({
     const isActivelyPracticing = screenPhase === "practicing" && practice.phase === "active";
     if (!isActivelyPracticing) stopMetronome();
   }, [screenPhase, practice.phase, stopMetronome]);
+
+  // autoStarted guards session.begin() to fire exactly once for a
+  // deep-linked drill (same as ExerciseSetup's onStart does normally),
+  // even though this effect re-runs on every bpm/time-signature change.
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (initialPool && !autoStarted.current) {
+      autoStarted.current = true;
+      session.begin(exercise.uses_metronome ? metronome.bpm : null, metronome.timeSignature);
+    }
+  }, [initialPool, session, exercise.uses_metronome, metronome.bpm, metronome.timeSignature]);
 
   function handleEndSession() {
     setSessionEnd(Date.now());

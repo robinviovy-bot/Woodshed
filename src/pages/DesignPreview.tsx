@@ -2,9 +2,10 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/Button";
 import { FreshnessDot, type Freshness } from "@/components/FreshnessDot";
-import { PoolBadge, type Pool } from "@/components/PoolBadge";
+import { PoolBadge } from "@/components/PoolBadge";
 import { type Theme } from "@/theme/theme-context";
 import { useTheme } from "@/theme/useTheme";
+import type { Pool } from "@/types/database";
 
 // Throwaway page for Phase 0: lets Robin sanity-check the palette,
 // typography, and a few sample components in both themes before any real

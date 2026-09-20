@@ -1,5 +1,4 @@
-// Note pools from SPEC.md section 3.
-export type Pool = "naturals" | "accidentals" | "chromatic" | "complete";
+import type { Pool } from "@/types/database";
 
 const POOL_LETTER: Record<Pool, string> = {
   naturals: "N",

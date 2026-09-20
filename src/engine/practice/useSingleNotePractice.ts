@@ -26,6 +26,11 @@ function drawRandomPitchClass(exclude?: number): number {
 // genuinely new note once you're back at the leading edge of history --
 // that's what lets you go back to review an earlier note and come forward
 // again without losing your place or double-counting it.
+//
+// No rep tracking here: reps-per-note is an unverified instruction ("play
+// it 3 times"), not something tapped/counted, per Robin's call. The
+// summary screen derives "reps logged" as notesCovered * reps_target
+// instead of tallying anything.
 export function useSingleNotePractice(pool: Pool) {
   const isFiniteQueue = pool === "naturals" || pool === "accidentals";
   const poolSize = getPitchClassesForPool(pool).length;
@@ -42,9 +47,7 @@ export function useSingleNotePractice(pool: Pool) {
   const [historyIndex, setHistoryIndex] = useState(0);
   const [lapStartIndex, setLapStartIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>("active");
-  const [reps, setReps] = useState(0);
   const [notesCovered, setNotesCovered] = useState(1);
-  const [totalReps, setTotalReps] = useState(0);
 
   const currentPitchClass = history[historyIndex];
   const canGoBack = historyIndex > 0;
@@ -54,9 +57,6 @@ export function useSingleNotePractice(pool: Pool) {
   const queuePosition = historyIndex - lapStartIndex + 1;
 
   function next() {
-    setTotalReps((total) => total + reps);
-    setReps(0);
-
     if (historyIndex < history.length - 1) {
       // Stepping forward into a note already drawn earlier (the user had
       // gone back). Just redisplay it, nothing new to draw or count.
@@ -86,8 +86,6 @@ export function useSingleNotePractice(pool: Pool) {
 
   function previous() {
     if (!canGoBack) return;
-    setTotalReps((total) => total + reps);
-    setReps(0);
     setHistoryIndex(historyIndex - 1);
   }
 
@@ -100,7 +98,6 @@ export function useSingleNotePractice(pool: Pool) {
     setLapStartIndex(history.length);
     setNotesCovered((count) => count + 1);
     setPhase("active");
-    setReps(0);
   }
 
   return {
@@ -109,10 +106,7 @@ export function useSingleNotePractice(pool: Pool) {
     canGoBack,
     queueLength: isFiniteQueue ? poolSize : null,
     queuePosition: isFiniteQueue ? queuePosition : null,
-    reps,
     notesCovered,
-    totalReps,
-    setReps,
     next,
     previous,
     shuffleAgain,

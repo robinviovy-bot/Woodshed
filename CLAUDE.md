@@ -360,6 +360,15 @@ Tracks SPEC.md section 12. Update this after finishing each phase.
     `engine/metronome/`) collapses to just the current value until tapped,
     used in both `Practice.tsx` and `Metronome.tsx` for consistency. The
     top-strip back-arrow button now does what "End session" used to.
+  - **Also removed after Robin tried it:** the tap-to-fill rep counter
+    (`RepCounter.tsx`, deleted). A manually-tapped tally that nothing
+    verifies didn't add anything real, so it's now a plain instruction
+    ("Play it {reps_target} times", reading the exercise's actual config
+    value rather than a hardcoded "3"). `useSingleNotePractice` no longer
+    tracks reps at all. The summary's "reps logged" is now derived
+    (`notesCovered * config.reps_target`) instead of tallied, trusting the
+    instruction was followed, same unverified spirit as the confidence
+    rating right above it.
 - [ ] Phase 5 — Remaining exercise modes (1, 3, 4) on the same engine
 - [ ] Phase 6 — Session persistence, drill_stats, streak and XP logic
 - [ ] Phase 7 — Home, exercise picker, progress heatmap

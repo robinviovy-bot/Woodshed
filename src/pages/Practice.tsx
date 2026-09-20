@@ -13,7 +13,6 @@ import { TimeSignaturePicker } from "@/engine/metronome/TimeSignaturePicker";
 import type { MetronomeSound } from "@/engine/metronome/types";
 import { useMetronome } from "@/engine/metronome/useMetronome";
 import { NoteNavigator } from "@/engine/practice/NoteNavigator";
-import { RepCounter } from "@/engine/practice/RepCounter";
 import { useSingleNotePractice } from "@/engine/practice/useSingleNotePractice";
 import { supabase } from "@/lib/supabase";
 import type { Confidence, Exercise, Pool } from "@/types/database";
@@ -194,12 +193,16 @@ export function Practice() {
   if (screenPhase === "summary") {
     const sessionSeconds =
       sessionStart && sessionEnd ? Math.round((sessionEnd - sessionStart) / 1000) : 0;
+    // Reps aren't tallied (see useSingleNotePractice's header comment) --
+    // derived instead by trusting the "play it N times" instruction was
+    // followed, same spirit as the unverified confidence rating below.
+    const repsLogged = practice.notesCovered * exercise.config.reps_target;
     return (
       <div className="mx-auto flex min-h-screen max-w-[480px] flex-col items-center justify-center gap-6 px-6 py-10 text-center">
         <h1 className="font-display text-3xl">Nice work</h1>
         <div className="flex flex-col gap-1 text-ink-secondary">
           <p>{pluralize(practice.notesCovered, "note")} covered</p>
-          <p>{pluralize(practice.totalReps, "rep")} logged</p>
+          <p>{pluralize(repsLogged, "rep")} logged</p>
           <p>{formatDuration(sessionSeconds)}</p>
           {confidence && <p className="mt-2 text-ink-muted">Marked {CONFIDENCE_LABELS[confidence]}</p>}
         </div>
@@ -256,7 +259,9 @@ export function Practice() {
               onPrevious={practice.previous}
               onNext={practice.next}
             />
-            <RepCounter reps={practice.reps} onChange={practice.setReps} />
+            <p className="text-sm text-ink-muted">
+              Play it {pluralize(exercise.config.reps_target, "time")}
+            </p>
           </>
         )}
       </div>

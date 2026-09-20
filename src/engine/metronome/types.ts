@@ -1,13 +1,16 @@
-// Time signatures from SPEC.md section 7. Each beat gets one dot in the
-// beat indicator, so "beats per bar" is just the signature's top number.
-export type TimeSignature = "4/4" | "3/4" | "2/4" | "6/8" | "5/4" | "7/8";
+// Time signatures from SPEC.md section 7, plus 6/4 (added per Robin: the
+// default for every Fretboard 101 exercise, one beat per string). Each
+// beat gets one dot in the beat indicator, so "beats per bar" is just the
+// signature's top number.
+export type TimeSignature = "4/4" | "3/4" | "2/4" | "6/4" | "6/8" | "5/4" | "7/8";
 
-export const TIME_SIGNATURES: TimeSignature[] = ["4/4", "3/4", "2/4", "6/8", "5/4", "7/8"];
+export const TIME_SIGNATURES: TimeSignature[] = ["4/4", "3/4", "2/4", "6/4", "6/8", "5/4", "7/8"];
 
 export const BEATS_PER_BAR: Record<TimeSignature, number> = {
   "4/4": 4,
   "3/4": 3,
   "2/4": 2,
+  "6/4": 6,
   "6/8": 6,
   "5/4": 5,
   "7/8": 7,

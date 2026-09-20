@@ -365,7 +365,9 @@ automatic counting, no audio detection.
 - Large metronome play/pause button
 - BPM control with -1 / +1 and -5 / +5, range 30 to 240
 - Tap tempo
-- Time signature selector: 4/4, 3/4, 2/4, 6/8, 5/4, 7/8
+- Time signature selector: 4/4, 3/4, 2/4, 6/4, 6/8, 5/4, 7/8. Every
+  Fretboard 101 exercise defaults to 6/4 (one beat per string); the
+  standalone metronome (not tied to any exercise) defaults to 4/4 instead.
 - Primary button "Next", which moves to the next note
 - Secondary actions "Skip" (pushes the current note to the back of the queue)
   and "End session"
@@ -382,13 +384,15 @@ if it was the first session of the day, and the new streak.
 **CRITICAL metronome behavior:** the metronome loops completely independently
 of the exercise flow. Notes change only when the user taps "Next" (or the
 prev/next arrows). The metronome keeps playing without interruption during
-that change. It only ever runs while a drill is actively open, though:
-reaching the end of the queue, the confidence prompt, or the summary all
-stop it, since those aren't practicing anymore. Never auto-restarts on its
-own after that; the player presses play again when they're ready. This
-applies to every exercise, not just this one. The standalone metronome
-reachable from the home screen is unaffected, since it isn't tied to any
-exercise.
+that change. It starts automatically the moment a drill opens (pressing
+"Start" on the setup screen, or landing straight in via Home's "Continue"/
+"Due for review"), no separate tap needed. It only ever runs while a drill
+is actively open, though: reaching the end of the queue, the confidence
+prompt, or the summary all stop it, since those aren't practicing anymore.
+Never auto-restarts on its own after that; the player presses play again
+when they're ready. This applies to every exercise, not just this one. The
+standalone metronome reachable from the home screen is unaffected, since
+it isn't tied to any exercise -- it always starts paused.
 
 **Metronome implementation:** use the Web Audio API with a lookahead
 scheduler, scheduling clicks about 100 ms ahead against

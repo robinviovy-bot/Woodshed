@@ -22,10 +22,14 @@ interface QueuedNote {
   time: number;
 }
 
-export function useMetronome(initialBpm = 80, initialSound: MetronomeSound = "click") {
+export function useMetronome(
+  initialBpm = 80,
+  initialSound: MetronomeSound = "click",
+  initialTimeSignature: TimeSignature = "4/4",
+) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [bpm, setBpmState] = useState(initialBpm);
-  const [timeSignature, setTimeSignatureState] = useState<TimeSignature>("4/4");
+  const [timeSignature, setTimeSignatureState] = useState<TimeSignature>(initialTimeSignature);
   const [sound, setSound] = useState<MetronomeSound>(initialSound);
   const [currentBeat, setCurrentBeat] = useState(-1);
   const [tickCount, setTickCount] = useState(0);

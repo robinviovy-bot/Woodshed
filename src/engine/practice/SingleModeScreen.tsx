@@ -45,7 +45,10 @@ export function SingleModeScreen({
   const [sessionStart, setSessionStart] = useState<number | null>(() => (initialPool ? Date.now() : null));
   const [sessionEnd, setSessionEnd] = useState<number | null>(null);
 
-  const metronome = useMetronome(initialBpm ?? 40, metronomeSound);
+  // 6/4 by default here (one beat per string, per Robin -- Fretboard 101's
+  // exercises all default to it), unlike the standalone /metronome tool,
+  // which stays at useMetronome's own 4/4 default.
+  const metronome = useMetronome(initialBpm ?? 40, metronomeSound, "6/4");
   const practice = useSingleNotePractice(pool);
   const session = usePracticeSession(exercise, pool);
   const [preferSharp] = useSpellingChoices(accidentalSpelling, 1, practice.historyIndex);
@@ -63,12 +66,14 @@ export function SingleModeScreen({
   // deep-linked drill (same as ExerciseSetup's onStart does normally),
   // even though this effect re-runs on every bpm/time-signature change.
   const autoStarted = useRef(false);
+  const startMetronome = metronome.start;
   useEffect(() => {
     if (initialPool && !autoStarted.current) {
       autoStarted.current = true;
       session.begin(exercise.uses_metronome ? metronome.bpm : null, metronome.timeSignature);
+      if (exercise.uses_metronome) startMetronome();
     }
-  }, [initialPool, session, exercise.uses_metronome, metronome.bpm, metronome.timeSignature]);
+  }, [initialPool, session, exercise.uses_metronome, metronome.bpm, metronome.timeSignature, startMetronome]);
 
   function handleEndSession() {
     setSessionEnd(Date.now());
@@ -90,6 +95,7 @@ export function SingleModeScreen({
         onStart={() => {
           setSessionStart(Date.now());
           session.begin(exercise.uses_metronome ? metronome.bpm : null, metronome.timeSignature);
+          if (exercise.uses_metronome) metronome.start();
           setScreenPhase("practicing");
         }}
       />

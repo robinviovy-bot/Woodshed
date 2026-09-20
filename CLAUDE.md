@@ -765,3 +765,33 @@ Tracks SPEC.md section 12. Update this after finishing each phase.
     re-renders (a metronome tick, for instance) -- only a genuinely new
     draw re-rolls it. `useSingleNotePractice` now exposes `historyIndex`
     for exactly this purpose, having not needed to before.
+- **Metronome auto-starts on drill open, defaults to 6/4, per Robin.**
+  Previously every practice screen landed with the metronome paused,
+  needing a manual tap before it made any sound -- now `metronome.start()`
+  is called alongside `usePracticeSession.begin()`, both in
+  ExerciseSetup's `onStart` and in the deep-link `autoStarted` effect
+  (Home's "Continue"/"Due for review"), so pressing Start (or tapping one
+  of those rows) goes straight into a playing metronome. Doesn't apply to
+  exercise 1 (`uses_metronome: false`) -- guarded the same way the BPM
+  readout already was. Also added `"6/4"` as a genuinely new
+  `TimeSignature` (`engine/metronome/types.ts` -- SPEC.md section 7
+  previously listed only 4/4, 3/4, 2/4, 6/8, 5/4, 7/8) and gave
+  `useMetronome` a third `initialTimeSignature` parameter (default stays
+  `"4/4"`, unchanged for existing callers) so each Fretboard 101 mode
+  screen can pass `"6/4"` explicitly -- one beat per string, matching
+  exercise 4's "Start test" run, which already steps one note per six
+  beats regardless of signature. The standalone `/metronome` tool calls
+  `useMetronome()` with no arguments and stays at 4/4, unaffected, per
+  Robin's explicit call to keep it separate from the exercises' default.
+  - **Known gap, not addressed:** the deep-link auto-start
+    (`autoStarted` effect) calls `metronome.start()` from inside a
+    `useEffect` after navigation, not synchronously inside a click
+    handler like ExerciseSetup's `onStart` does. iOS Safari's autoplay
+    policy generally only treats a click's own synchronous call stack as
+    a "user gesture" for creating/resuming an `AudioContext` -- an effect
+    firing after the click (and after a route change re-mounts the
+    screen) may not qualify, so this path could silently end up with
+    `isPlaying: true` but no actual sound on iOS specifically. Untested
+    on a real device; if Robin reports the metronome looking like it's
+    playing but staying silent right after tapping "Continue," this is
+    the first place to look.

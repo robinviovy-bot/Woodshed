@@ -82,7 +82,11 @@ function SequenceModeScreenLoaded({
 
   const metronome = useMetronome(initialBpm ?? prefs.bpm, metronomeSound, prefs.timeSignature);
   const practice = useSequencePractice(pool, exercise.config.sequence_length ?? 7);
-  const test = useSequenceTest(practice.sequence.length, metronome, exercise.config.autoStartMetronome);
+  // Defaults true if the row hasn't been migrated to carry this key yet
+  // (older cached data, or a migration not yet applied) -- every exercise
+  // with a "Start test" run today expects it, so a missing flag should
+  // never silently turn the button into a no-op.
+  const test = useSequenceTest(practice.sequence.length, metronome, exercise.config.autoStartMetronome ?? true);
   const session = usePracticeSession(exercise, pool);
   const preferSharp = useSpellingChoices(
     accidentalSpelling,

@@ -10,7 +10,7 @@ export function RequireGuest({ children }: { children: ReactNode }) {
 
   if (loading) return <LoadingScreen />;
   if (session) {
-    return <Navigate to={profile?.first_name ? "/home" : "/onboarding"} replace />;
+    return <Navigate to={profile?.onboarding_completed_at ? "/home" : "/onboarding"} replace />;
   }
 
   return children;

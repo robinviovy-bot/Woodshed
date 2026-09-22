@@ -814,3 +814,30 @@ Tracks SPEC.md section 12. Update this after finishing each phase.
   underlying "Delete account doesn't remove auth.users" gap is
   unchanged and can still leave a navigable zombie account -- flagged
   again, not solved here.
+- **Follow-up: the fix above didn't fully land, found by testing against
+  the real deployed app with Robin.** Two separate things, both in
+  `src/auth/`: (1) `RequireGuest.tsx` was missed in the first pass -- it
+  still branched on `profile?.first_name` to decide where a signed-in
+  visitor lands, and it's this guard, not `RequireOnboarded`, that runs
+  right after a successful sign-in (the sign-in page is wrapped in
+  `RequireGuest`). Now checks `onboarding_completed_at` too. (2) The real
+  bug: `AuthProvider`'s `onAuthStateChange` handler updated
+  `session`/`user` synchronously but fetched the matching `profile`
+  asynchronously without setting `loading` back to `true` for that gap --
+  `loading` was only ever true during the very first mount. So for the
+  length of that fetch, any guard reading context saw a fresh
+  `session`/`user` paired with a stale `profile` (`null`, left over from
+  the sign-out right before), decided onboarding wasn't done, and
+  navigated to `/onboarding` -- deterministically, every sign-in,
+  regardless of what's actually in the database. Once that `<Navigate>`
+  fires there's nothing to bring the user back, so the onboarding form
+  has to be completed again to escape. Confirmed via a three-way SQL
+  check with Robin (before onboarding / after onboarding in a stale
+  cached tab / after onboarding in a freshly loaded tab) that the write
+  itself was fine all along -- `onboarding_completed_at` was landing
+  correctly in `profiles`; the guard just never waited for it. Fixed by
+  setting `loading` around the `onAuthStateChange` fetch the same way
+  `init()` already does. General lesson for this codebase: any route
+  guard reading `profile` from `useAuth()` needs `loading` to be a true
+  guarantee that `session` and `profile` are from the same moment, not
+  just "the app has mounted once."

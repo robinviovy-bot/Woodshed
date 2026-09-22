@@ -49,8 +49,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(nextSession?.user ?? null);
 
       if (nextSession?.user) {
+        // Route guards (RequireAuth/RequireGuest/RequireOnboarded) read
+        // `loading` to know whether `profile` is trustworthy yet. Without
+        // this, session/user update synchronously above while `profile`
+        // still holds its previous value (null, right after a sign-out) for
+        // the length of this await -- long enough for a guard to re-render,
+        // see an empty profile, and redirect to /onboarding before the real
+        // profile ever loads. Once that redirect fires there's no coming
+        // back from it automatically, so this must be closed, not just
+        // fast.
+        setLoading(true);
         const nextProfile = await fetchProfile(nextSession.user.id);
         setProfile(nextProfile);
+        setLoading(false);
       } else {
         setProfile(null);
       }

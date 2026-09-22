@@ -21,6 +21,7 @@ export interface Profile {
   validation_mode: string;
   metronome_sound: string;
   timezone: string | null;
+  onboarding_completed_at: string | null;
   created_at: string;
 }
 

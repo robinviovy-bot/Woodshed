@@ -795,3 +795,22 @@ Tracks SPEC.md section 12. Update this after finishing each phase.
     on a real device; if Robin reports the metronome looking like it's
     playing but staying silent right after tapping "Continue," this is
     the first place to look.
+- **Bug fix: onboarding replaying on every login.** `RequireOnboarded`
+  used `!profile?.first_name` as a proxy for "onboarding done," which
+  broke for any account whose `profiles` row stopped existing after a
+  real onboarding -- concretely, `Profile.tsx`'s "Delete account" deletes
+  the `profiles` row but deliberately leaves `auth.users` in place (no
+  service-role Edge Function yet, per the Phase 2 flag above). Signing
+  back in with such an account fetches no profile row at all, so
+  `RequireOnboarded` redirected to `/onboarding` every time, and
+  `Onboarding.tsx`'s old `UPDATE ... WHERE id = user.id` silently
+  affected zero rows against a missing row, so nothing was ever actually
+  saved -- an unbreakable loop. Fixed with an explicit
+  `onboarding_completed_at timestamptz` column on `profiles`
+  (`supabase/migrations/20260921010000_onboarding_completed_flag.sql`),
+  which `RequireOnboarded` now checks instead of `first_name`, and by
+  switching `Onboarding.tsx`'s save from `update` to `upsert` so it also
+  recreates a missing row rather than failing to match one. The
+  underlying "Delete account doesn't remove auth.users" gap is
+  unchanged and can still leave a navigable zombie account -- flagged
+  again, not solved here.

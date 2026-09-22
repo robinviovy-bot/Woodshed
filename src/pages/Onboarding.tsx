@@ -27,13 +27,21 @@ export function Onboarding() {
     setError(null);
 
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({ first_name: firstName, notation, timezone })
-      .eq("id", user.id);
+    // upsert, not update: a profiles row usually already exists (the
+    // handle_new_user trigger creates it at sign-up), but this must also
+    // recover an account whose row was removed by "Delete account" (which
+    // doesn't remove the auth.users row -- see CLAUDE.md) and is now
+    // signing back in with none.
+    const { error: upsertError } = await supabase.from("profiles").upsert({
+      id: user.id,
+      first_name: firstName,
+      notation,
+      timezone,
+      onboarding_completed_at: new Date().toISOString(),
+    });
 
     setSubmitting(false);
-    if (updateError) {
+    if (upsertError) {
       setError("Couldn't save that. Please try again.");
       return;
     }

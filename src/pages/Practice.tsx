@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/useAuth";
+import { BackNav } from "@/components/BackNav";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import type { MetronomeSound } from "@/engine/metronome/types";
 import { PairModeScreen } from "@/engine/practice/PairModeScreen";
@@ -8,6 +9,8 @@ import { SequenceModeScreen } from "@/engine/practice/SequenceModeScreen";
 import { SingleModeScreen } from "@/engine/practice/SingleModeScreen";
 import { supabase } from "@/lib/supabase";
 import type { Exercise, Pool } from "@/types/database";
+
+type ExerciseWithProgram = Exercise & { programs: { slug: string } };
 
 // Route entry for every exercise: loads the exercise row by slug, then
 // dispatches to its mode handler. Adding a future exercise means inserting
@@ -24,14 +27,20 @@ export function Practice() {
   const navigate = useNavigate();
 
   const [exercise, setExercise] = useState<Exercise | null>(null);
+  const [lessonSlug, setLessonSlug] = useState<string | null>(null);
   const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     async function loadExercise() {
+      // programs(slug) is a many-to-one embed (many exercises, one
+      // program) -- PostgREST returns a single object, but this project's
+      // untyped client can't tell that apart from a one-to-many embed and
+      // infers it as an array regardless (same gotcha as Home.tsx's
+      // drills-to-exercises embed).
       const { data, error } = await supabase
         .from("exercises")
-        .select("*")
+        .select("*, programs(slug)")
         .eq("slug", slug)
         .single();
       if (cancelled) return;
@@ -39,7 +48,9 @@ export function Practice() {
         setLoadError(true);
         return;
       }
-      setExercise(data as Exercise);
+      const typed = data as unknown as ExerciseWithProgram;
+      setExercise(typed);
+      setLessonSlug(typed.programs.slug);
     }
     loadExercise();
     return () => {
@@ -49,16 +60,16 @@ export function Practice() {
 
   if (loadError) {
     return (
-      <div className="mx-auto flex min-h-screen max-w-[480px] flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-ink-secondary">Couldn't load that exercise.</p>
-        <Link to="/home" className="text-accent">
-          Back to Home
-        </Link>
+      <div className="mx-auto flex min-h-screen max-w-[480px] flex-col px-6 py-6">
+        <BackNav to="/home" label="Back to Home" />
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+          <p className="text-ink-secondary">Couldn't load that exercise.</p>
+        </div>
       </div>
     );
   }
 
-  if (!exercise) return <LoadingScreen />;
+  if (!exercise || !lessonSlug) return <LoadingScreen />;
 
   const notation = profile?.notation ?? "en";
   const metronomeSound = (profile?.metronome_sound as MetronomeSound) ?? "click";
@@ -77,6 +88,7 @@ export function Practice() {
         notation={notation}
         metronomeSound={metronomeSound}
         onExit={onExit}
+        lessonSlug={lessonSlug}
         initialPool={initialPool}
         initialBpm={initialBpm}
       />
@@ -90,6 +102,7 @@ export function Practice() {
         notation={notation}
         metronomeSound={metronomeSound}
         onExit={onExit}
+        lessonSlug={lessonSlug}
         initialPool={initialPool}
         initialBpm={initialBpm}
       />
@@ -102,6 +115,7 @@ export function Practice() {
       notation={notation}
       metronomeSound={metronomeSound}
       onExit={onExit}
+      lessonSlug={lessonSlug}
       initialPool={initialPool}
       initialBpm={initialBpm}
     />

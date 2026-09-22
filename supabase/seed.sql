@@ -19,6 +19,10 @@ on conflict (slug) do nothing;
 -- chromatic pools; the complete pool always uses all 12 notes instead,
 -- which the practice engine special-cases rather than reading from config
 -- (SPEC.md section 4: "With complete, the sequence is all 12 notes").
+-- config.autoStartMetronome is true only for exercise 4, whose "Start
+-- test" run starts the metronome itself as part of its own countdown --
+-- unrelated to, and not overridden by, the pause-until-Play default every
+-- exercise's practicing screen otherwise launches with.
 insert into public.exercises (
   program_id, slug, position, title, description, uses_metronome, mode,
   available_pools, default_pool, config
@@ -34,28 +38,28 @@ cross join (
       'No metronome. Play the drawn note on each of the 6 strings, going up then down. 3 reps, then move to the next note.',
       false, 'single',
       array['naturals', 'accidentals', 'chromatic'],
-      '{"reps_target": 3, "sequence_length": null}'::jsonb
+      '{"reps_target": 3, "sequence_length": null, "autoStartMetronome": false}'::jsonb
     ),
     (
       'single-note-metronome', 2, 'Single note with metronome',
       'Same as free recognition, played to the metronome, one note per beat.',
       true, 'single',
       array['naturals', 'accidentals', 'chromatic'],
-      '{"reps_target": 3, "sequence_length": null}'::jsonb
+      '{"reps_target": 3, "sequence_length": null, "autoStartMetronome": false}'::jsonb
     ),
     (
       'two-alternating-notes', 3, 'Two alternating notes',
       'Play the first drawn note going up across the 6 strings, the second coming down, without stopping.',
       true, 'pair',
       array['naturals', 'accidentals', 'chromatic'],
-      '{"reps_target": 3, "sequence_length": null}'::jsonb
+      '{"reps_target": 3, "sequence_length": null, "autoStartMetronome": false}'::jsonb
     ),
     (
       'random-note-sequence', 4, 'Random note sequence',
       'Play a drawn sequence of notes, alternating up and down across the 6 strings, without stopping.',
       true, 'sequence',
       array['naturals', 'accidentals', 'chromatic', 'complete'],
-      '{"reps_target": 3, "sequence_length": 7}'::jsonb
+      '{"reps_target": 3, "sequence_length": 7, "autoStartMetronome": true}'::jsonb
     )
 ) as x (slug, position, title, description, uses_metronome, mode, available_pools, config)
 where p.slug = 'fretboard-101'

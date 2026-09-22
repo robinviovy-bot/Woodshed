@@ -841,3 +841,74 @@ Tracks SPEC.md section 12. Update this after finishing each phase.
   guard reading `profile` from `useAuth()` needs `loading` to be a true
   guarantee that `session` and `profile` are from the same moment, not
   just "the app has mounted once."
+- **Navigation and metronome-launch rework (2026-09-22), per Robin.**
+  Three changes, scoped together since they touched the same screens:
+  - **Hierarchy back navigation.** Every "Back to Home" text link below
+    Home is gone. New `components/BackNav.tsx` (a plain chevron, distinct
+    from `BackButton`'s X) navigates by route, not browser history, so it
+    stays correct on a direct URL or a PWA launch: the lesson list
+    (`ExercisePicker`) goes to `/home`, and `ExerciseSetup` goes to
+    `/lessons/:slug` for the exercise's own lesson -- `Practice.tsx` now
+    embeds `programs(slug)` on its exercise query to know which one (same
+    many-to-one-embed-typed-as-array gotcha as Home.tsx's, cast the same
+    way). Per Robin's explicit call, the practicing screen itself gets no
+    back arrow at all -- it keeps only its existing X (`BackButton`,
+    "End session," unrelated to this and unchanged). Losing a session to
+    the *browser's* own back/forward or a tab close is what the new
+    `engine/practice/useConfirmLeaveGuard.ts` guards instead: `useBlocker`
+    (react-router v7, already a dependency) blocks in-app navigation away
+    while `screenPhase === "practicing"` and shows a `ConfirmDialog`; a
+    `beforeunload` listener covers a hard tab close/refresh (that dialog
+    is the browser's own -- can't be styled). New
+    `components/ConfirmDialog.tsx` is a generic on-brand overlay for this
+    and anything similar later, matching Profile.tsx's existing
+    account-deletion card rather than `window.confirm()`.
+  - **Per-exercise metronome preferences.** New migration
+    (`supabase/migrations/20260922000000_exercise_metronome_prefs.sql`)
+    adds `exercise_metronome_prefs` (`user_id`, `exercise_id`,
+    `metronome_enabled`, `bpm`, `time_signature`), RLS-scoped like every
+    other user table. `exercises.uses_metronome` (catalog data, shared by
+    everyone) is no longer a hard gate -- it's now only the seed default
+    the first time a user visits an exercise; `ExerciseSetup` shows a new
+    "Metronome" section (`components/Toggle.tsx`, on/off, always
+    actionable, plus the existing `BpmStepper`/`TimeSignaturePicker`) on
+    every exercise without exception, exercise 1 included, and the three
+    mode screens gate their metronome UI on this per-user preference
+    instead of the catalog flag. New
+    `engine/practice/useExerciseMetronomePrefs.ts` loads it (Supabase,
+    falling back to a `localStorage` cache on read failure) and persists
+    every change -- from `ExerciseSetup`, the practicing dock's own BPM
+    stepper/time signature picker, or tap tempo, all through one
+    `useEffect` watching `metronome.bpm`/`metronome.timeSignature` rather
+    than wrapping each control individually, so nothing is missed. Each
+    mode screen is now split into an outer component (loads prefs, shows
+    `LoadingScreen` until ready) and an inner `*Loaded` one that actually
+    calls `useMetronome` -- its initial bpm/time signature only take
+    effect at mount, so they have to already be known.
+  - **Metronome starts paused.** The auto-start-on-launch from the
+    previous session (`metronome.start()` in `onStart` and the deep-link
+    `autoStarted` effect, across all three mode screens) is gone --
+    landing on a drill, however you got there, always leaves the
+    metronome paused until Play is pressed, giving time to get in
+    position first. `PlayPauseButton` grew a spacebar shortcut (works
+    everywhere it renders, including the standalone `/metronome` tool, for
+    free). The one exception is `random-note-sequence`'s "Start test" run,
+    which starts the metronome itself as an integral part of its own
+    countdown, same as before -- but this is no longer hardcoded: new
+    `exercises.config.autoStartMetronome` (added by the same migration,
+    `true` only for `random-note-sequence`) is threaded into
+    `useSequenceTest`, which now only auto-starts when both the metronome
+    isn't already playing and this flag is set -- otherwise `start()` is a
+    no-op, since a test timed against a metronome that isn't running has
+    nothing to synchronize against. "Start test" itself is hidden
+    entirely when the user has turned this exercise's metronome off,
+    since the whole feature is meaningless without one.
+  - Not testable end-to-end in this session: no login credentials
+    available to exercise the authenticated screens in a browser --
+    verified by `tsc -b`/`vite build`/`oxlint` passing clean instead. Test
+    for real once the migration is applied: sign-in through Home, a
+    lesson's exercise list, and an exercise's config screen should all
+    show the new back arrow going up exactly one level; toggling the
+    metronome off on exercise 1 should show its controls for the first
+    time ever; a drill should launch with the metronome silent until
+    Play; exercise 4's "Start test" should still auto-start it as before.

@@ -38,6 +38,11 @@ export interface Program {
 export interface ExerciseConfig {
   reps_target: number;
   sequence_length: number | null;
+  // true only for random-note-sequence's "Start test" run, which starts the
+  // metronome itself as part of its own countdown -- unrelated to, and not
+  // overridden by, the pause-until-Play default every exercise launches
+  // with otherwise. See useSequenceTest.
+  autoStartMetronome: boolean;
 }
 
 export interface Exercise {
@@ -120,6 +125,16 @@ export interface Milestone {
   user_id: string;
   code: MilestoneCode;
   achieved_on: string;
+}
+
+export interface ExerciseMetronomePref {
+  id: string;
+  user_id: string;
+  exercise_id: string;
+  metronome_enabled: boolean;
+  bpm: number;
+  time_signature: string;
+  updated_at: string;
 }
 
 export interface UserStats {

@@ -20,7 +20,11 @@ const BEATS_PER_NOTE = 6;
 // selected). start() also realigns the metronome's upcoming beat so the
 // one that starts note 1 lands on the accented downbeat, "the 1," instead
 // of wherever it happens to fall.
-export function useSequenceTest(sequenceLength: number, metronome: ReturnType<typeof useMetronome>) {
+export function useSequenceTest(
+  sequenceLength: number,
+  metronome: ReturnType<typeof useMetronome>,
+  autoStartMetronome: boolean,
+) {
   const [phase, setPhase] = useState<Phase>("idle");
   // null means "Ready?" (no number yet); otherwise the digit to show.
   const [countdownBeatsLeft, setCountdownBeatsLeft] = useState<number | null>(null);
@@ -81,6 +85,12 @@ export function useSequenceTest(sequenceLength: number, metronome: ReturnType<ty
     // (that stale-read race was the bug behind the countdown showing
     // something like "10" instead of "3").
     const willStartFresh = !isPlaying;
+    // If the metronome isn't already running and this exercise isn't
+    // flagged to auto-start it (exercise.config.autoStartMetronome), there's
+    // nothing this test can time itself against -- the player needs to
+    // press Play first. Every exercise's practicing screen otherwise leaves
+    // the metronome paused until Play is pressed manually.
+    if (willStartFresh && !autoStartMetronome) return;
     baselineTickRef.current = willStartFresh ? 0 : tickCount;
     setCountdownBeatsLeft(null);
     setPhase("countdown");

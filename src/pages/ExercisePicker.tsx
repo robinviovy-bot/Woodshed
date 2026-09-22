@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { BackNav } from "@/components/BackNav";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { supabase } from "@/lib/supabase";
 import type { Exercise, Program } from "@/types/database";
@@ -42,11 +43,11 @@ export function ExercisePicker() {
 
   if (loadError) {
     return (
-      <div className="mx-auto flex min-h-screen max-w-[480px] flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-ink-secondary">Couldn't load that lesson.</p>
-        <Link to="/home" className="text-accent">
-          Back to Home
-        </Link>
+      <div className="mx-auto flex min-h-screen max-w-[480px] flex-col px-6 py-6">
+        <BackNav to="/home" label="Back to Home" />
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+          <p className="text-ink-secondary">Couldn't load that lesson.</p>
+        </div>
       </div>
     );
   }
@@ -54,7 +55,9 @@ export function ExercisePicker() {
   if (!program) return <LoadingScreen />;
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-[480px] flex-col gap-8 px-6 py-10">
+    <div className="mx-auto flex min-h-screen max-w-[480px] flex-col gap-8 px-6 py-6">
+      <BackNav to="/home" label="Back to Home" />
+
       <div>
         <h1 className="font-display text-3xl">{program.title}</h1>
         {program.subtitle && <p className="mt-1 text-sm text-ink-secondary">{program.subtitle}</p>}
@@ -72,10 +75,6 @@ export function ExercisePicker() {
           </Link>
         ))}
       </div>
-
-      <Link to="/home" className="text-center text-sm text-ink-muted">
-        Back to Home
-      </Link>
     </div>
   );
 }
